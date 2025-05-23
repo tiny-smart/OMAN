@@ -14,7 +14,7 @@ Xuhui Zhu<sup>1</sup>, Jing Xu<sup>2</sup>,Bingjie Wang<sup>1</sup>,Huikang Dai<
 
 [[Paper]](TODO) | [[CODE]](TODO)
 
-![OMAN](pics/Pipeline.PNG)
+![OMAN](pics/Pipeline.png)
 
 ## Overview
 
