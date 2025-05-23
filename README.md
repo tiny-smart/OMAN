@@ -40,7 +40,7 @@ pip install -r requirements.txt
 
 ## Inferrence
 
-- Download ImageNet pretrained ConvNext[baidu dist](https://pan.baidu.com/s/1oxxcD6h-JiRdJ4VItHJIUQ?pwd=ubqt)[Google drive](https://drive.google.com/file/d/1tDGb3DAEITajJ5xlzYSxCa5x4dnTbfJ-/view?usp=sharing), and put it in ```pretrained``` folder. Or you can define your pre-trained model path in [models/backbones/backbone.py](models/backbones/backbone.py)
+- Download ImageNet pretrained ConvNext[[baidu dist]](https://pan.baidu.com/s/1oxxcD6h-JiRdJ4VItHJIUQ?pwd=ubqt)[[Google drive]](https://drive.google.com/file/d/1tDGb3DAEITajJ5xlzYSxCa5x4dnTbfJ-/view?usp=sharing), and put it in ```pretrained``` folder. Or you can define your pre-trained model path in [models/backbones/backbone.py](models/backbones/backbone.py)
 - To test OMAN on SenseCrowd dataset, run
 
 ```
@@ -71,7 +71,7 @@ torchvision==0.15.2
 
 | Dataset | Model Link | MAE | MSE | WRAE |
 | :-- | :-- | :-- | :-- | :-- |
-| SenseCrowd | SENSE.pth[Baidu disk](https://pan.baidu.com/s/1ZWxReVf9QeePRTsVwu9sIg?pwd=9a8c)[Google drive](https://drive.google.com/file/d/1XKBnOscinhDot4blvQQtFx3IgrZQ8Wae/view?usp=sharing) | 8.58 | 16.80 | 10.89% |
+| SenseCrowd | SENSE.pth[[Baidu disk]](https://pan.baidu.com/s/1ZWxReVf9QeePRTsVwu9sIg?pwd=9a8c)[[Google drive]](https://drive.google.com/file/d/1XKBnOscinhDot4blvQQtFx3IgrZQ8Wae/view?usp=sharing) | 8.58 | 16.80 | 10.89% |
 
 ## Citation
 
