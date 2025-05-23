@@ -12,13 +12,13 @@ Xuhui Zhu<sup>1</sup>, Jing Xu<sup>2</sup>,Bingjie Wang<sup>1</sup>,Huikang Dai<
 <sup>2</sup>FiberHome Telecommunication Technologies Co., Ltd., China
 <sup>3</sup>University of Rochester, Rochester, USA
 
-[[Paper]](TODO) | [[CODE]](TODO)
+[[Paper]](TODO) | [[Code]](https://github.com/tiny-smart/OMAN)
 
-![OMAN](pics/Pipeline.png)
+![OMAN](pics/Pipeline.JPG)
 
 ## Overview
 
-TODO
+Video Individual Counting (VIC) aims to estimate pedestrian flux from a video. Existing VIC approaches, however, mainly follow a one-to-one (O2O) matching strategy where the same pedestrian must be exactly matched between frames, leading to sensitivity to appearance variations or missing detections. In this work, we show that the O2O matching could be relaxed to a one-to-many (O2M) matching problem, which better fits the problem nature of VIC and can leverage the social grouping behavior of walking pedestrians. We therefore introduce OMAN, a simple but effective VIC model with implicit One-to-Many mAtchiNg, featuring an implicit context generator and a one-to-many pairwise matcher. Experiments on the SenseCrowd and CroHD benchmarks show that OMAN achieves the state-of-the-art performance.
 
 ## Installation
 
@@ -37,10 +37,6 @@ pip install -r requirements.txt
 
 - SenseCrowd: Download the dataset from [Baidu disk](https://pan.baidu.com/s/1OYBSPxgwvRMrr6UTStq7ZQ?pwd=64xm#list/path=%2F) or from the original dataset [link](https://github.com/HopLee6/VSCrowd-Dataset).
 
-
-## Training
-
-TODO
 
 ## Inferrence
 
