@@ -25,7 +25,7 @@ Video Individual Counting (VIC) aims to estimate pedestrian flux from a video. E
 Clone and set up the CGNet repository:
 
 ```
-git clone TODO
+git clone https://github.com/tiny-smart/OMAN
 cd OMAN
 conda create -n OMAN python=3.9
 conda activate OMAN
