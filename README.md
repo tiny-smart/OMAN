@@ -9,7 +9,9 @@ International Conference on Image Processing (ICIP), 2025
 Xuhui Zhu<sup>1</sup>, Jing Xu<sup>2</sup>,Bingjie Wang<sup>3</sup>,Huikang Dai<sup>2</sup>,[Hao Lu](https://sites.google.com/site/poppinace/)<sup>1</sup>
 
 <sup>1</sup>Huazhong University of Science and Technology, China
+
 <sup>2</sup>FiberHome Telecommunication Technologies Co., Ltd., China
+
 <sup>3</sup>University of Rochester, Rochester, USA
 
 [[Paper]](TODO) | [[Code]](https://github.com/tiny-smart/OMAN)
