@@ -14,7 +14,7 @@ Xuhui Zhu<sup>1</sup>, Jing Xu<sup>2</sup>,Bingjie Wang<sup>3</sup>,Huikang Dai<
 
 <sup>3</sup>University of Rochester, Rochester, USA
 
-[[Paper]]([TODO](https://arxiv.org/abs/2506.13067)) | [[Code]](https://github.com/tiny-smart/OMAN)
+[[Paper]](https://arxiv.org/abs/2506.13067) | [[Code]](https://github.com/tiny-smart/OMAN)
 
 ![OMAN](pics/Pipeline.png)
 
