@@ -14,7 +14,7 @@ Xuhui Zhu<sup>1</sup>, Jing Xu<sup>2</sup>,Bingjie Wang<sup>3</sup>,Huikang Dai<
 
 <sup>3</sup>University of Rochester, Rochester, USA
 
-[[Paper]](TODO) | [[Code]](https://github.com/tiny-smart/OMAN)
+[[Paper]]([TODO](https://arxiv.org/abs/2506.13067)) | [[Code]](https://github.com/tiny-smart/OMAN)
 
 ![OMAN](pics/Pipeline.png)
 
@@ -80,7 +80,16 @@ torchvision==0.15.2
 If you find this work helpful for your research, please consider citing:
 
 ```
-TODO
+@INPROCEEDINGS{11084398,
+  author={Zhu, Xuhui and Xu, Jing and Wang, Bingjie and Dai, Huikang and Lu, Hao},
+  booktitle={2025 IEEE International Conference on Image Processing (ICIP)}, 
+  title={Video Individual Counting with Implicit One-to-Many Matching}, 
+  year={2025},
+  volume={},
+  number={},
+  pages={61-66},
+  keywords={Legged locomotion;Pedestrians;Sensitivity;Codes;Image processing;Semantics;Benchmark testing;Generators;Standards;Context modeling;Video individual counting;pedestrian flux;semantic correspondence;one-to-many matching},
+  doi={10.1109/ICIP55913.2025.11084398}}
 ```
 
 
