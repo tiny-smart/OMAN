@@ -2,7 +2,7 @@
 
 This repository includes the official implementation of the paper:
 
-[**Video Individual Counting With Implicit One-to-many Matching**](https://arxiv.org/abs/2308.13814)
+[**Video Individual Counting With Implicit One-to-many Matching**](https://arxiv.org/abs/2506.13067)
 
 International Conference on Image Processing (ICIP), 2025
 
