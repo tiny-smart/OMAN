@@ -4,11 +4,9 @@ import torchvision
 from torch import nn
 from torch.nn import functional as F
 
-# from .tri_sim_ot_b import ot_similarity
 import math
 import copy
 from typing import Optional, List, Dict, Tuple, Set, Union, Iterable, Any
-from torch import Tensor
 
 from scipy.optimize import linear_sum_assignment
 from models.transformer.transformer import TransformerDecoderLayer, TransformerDecoder, TransformerEncoder, \
@@ -159,25 +157,16 @@ class CoarseToFineMatcher(nn.Module):
 
 
 class VIC_Model(nn.Module):
-    # todo: freeze backbone and its loss, then train GNN only
     def __init__(self, backbone, num_feature_levels=1, num_channels=768, proj_channel=256, hidden_dim=256,
                  freeze_backbone=False) -> None:
         super().__init__()
         ''' backbone '''
         self.backbone = backbone
-        # self.backbone = build_backbone_vgg(backbone)
         if freeze_backbone:
             for name, parameter in self.backbone.named_parameters():
                 parameter.requires_grad_(False)
         self.num_feature_levels = num_feature_levels
         self.num_channels = num_channels
-
-        # input projection
-        # self.input_fuse = nn.Sequential(
-        #     nn.Conv2d(hidden_dim * num_feature_levels, hidden_dim, kernel_size=1, stride=1, padding=0),
-        #     nn.GroupNorm(32, hidden_dim),
-        #     nn.GELU(),
-        # )
 
         self.dist_encoder = nn.Sequential(
             nn.Conv1d(2, hidden_dim, kernel_size=1, stride=1, padding=0, bias=True),
@@ -203,8 +192,6 @@ class VIC_Model(nn.Module):
 
         # Regression
         self.regression = CoarseToFineMatcher(input_dim=(hidden_dim + 1) * 9, hidden_dim=hidden_dim, output_dim=2)
-        # self.regression = MLP((hidden_dim+1)*9, hidden_dim, 2, 3)  # ablation
-        # self.RoI_Align = torchvision.ops.RoIAlign(output_size=5, sampling_ratio=2, spatial_scale=0.125)
         self.ot_loss = GML()
 
     def forward(self, inputs):
@@ -224,20 +211,6 @@ class VIC_Model(nn.Module):
         z1_lists = []
         z2_lists = []
 
-        # for b in range(x1.shape[0]):
-        #     z1_list = []
-        #     z2_list = []
-        #     for pt1 in point1:
-        #         z1 = self.get_crops(x1[b].unsqueeze(0), pt1)
-        #         z1 = F.interpolate(z1, (96, 96))
-        #         z1_list.append(z1)
-        #     for pt2 in point2:
-        #         z2 = self.get_crops(x2[b].unsqueeze(0), pt2)
-        #         z2 = F.interpolate(z2, (96, 96))
-        #         z2_list.append(z2)
-        #
-        #     z1 = torch.cat(z1_list, dim=0).cuda()
-        #     z2 = torch.cat(z2_list, dim=0).cuda()
         z1 = self.batched_get_crops(x1[0].unsqueeze(0).cuda(), point1, window_size=[64, 64, 64, 128], out_size=96)
         z2 = self.batched_get_crops(x2[0].unsqueeze(0).cuda(), point2, window_size=[64, 64, 64, 128], out_size=96)
         z1_lists1 = self.backbone(z1)
@@ -258,9 +231,6 @@ class VIC_Model(nn.Module):
         z1_lists.append(self.input_proj(z1))
         z2_lists.append(self.input_proj(z2))
 
-        # pos_emd_1 = torch.zeros_like(z1_lists[0]).cuda()
-        # pos_emd_2 = torch.zeros_like(z2_lists[0]).cuda()
-
         # num*c*w*h -> (num*w*h)*1*c
         z1 = z1_lists[0].flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
         z2 = z2_lists[0].flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
@@ -268,36 +238,18 @@ class VIC_Model(nn.Module):
                                                                                                        2).flatten(0, 1)
         pos_emd_2 = self.pos_embedder(z2_lists[0].permute(0, 2, 3, 1)).flatten(2).unsqueeze(0).permute(1, 3, 0,
                                                                                                        2).flatten(0, 1)
-        # pos_emd_1 = pos_emd_1.flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
-        # pos_emd_2 = pos_emd_2.flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
 
         num, b, c = z1.shape
 
         z = torch.cat((z1, z2), dim=0)
         pos_embed = torch.cat((pos_emd_1, pos_emd_2), dim=0)
 
-        # d = dist[0].repeat_interleave(9, dim=0).repeat_interleave(9, dim=1).unsqueeze(2).cuda()
-
-        # src_mask = torch.ones(8, z.shape[0], z.shape[0]).cuda()
-        # dist_mask = dist
-        # dist_mask = dist_mask.repeat_interleave(9, dim=0).repeat_interleave(9, dim=1)
-        # ind1 = torch.argwhere(dist_mask < 0.2)
-        # ind2 = torch.argwhere(dist_mask < 0.2)
-        # ind3 = torch.argwhere(dist_mask < 0.2)
-        # src_mask[:3, ind1] = 0
-        # src_mask[3:6, ind2] = 0
-        # src_mask[6:8, ind3] = 0
-        # encoded_feature, attention_map = self.encoder(z, pos=pos_embed, mask=src_mask)
-
         dist_feat = self.dist_encoder(diff.cuda().transpose(1, 2)).transpose(1, 2)
-        # refer_feat = self.dist_encoder(torch.tensor([[[0.2, 0.2]]]).cuda().transpose(1, 2)).transpose(1, 2)
-        # refer_cost = torch.norm(refer_feat, dim=2)
         dist_cost = torch.norm(dist_feat, dim=2)  # -refer_cost  # shape: [n, m]
 
         encoded_feature, attention_map = self.encoder(z, pos=pos_embed,
                                                       d=dist_cost.repeat_interleave(9, dim=0).repeat_interleave(9,
                                                                                                                 dim=1).cuda())
-        # encoded_feature, attention_map = self.encoder(z, pos=pos_embed)
         encoded_feature1 = encoded_feature[:num]
         encoded_feature2 = encoded_feature[num:]
 
@@ -330,7 +282,6 @@ class VIC_Model(nn.Module):
 
         # Pass to CoarseToFineMatcher
         pred_logits = self.regression(sim_feat.squeeze(0), dist_feat)
-        # pred_logits = self.regression(sim_feat.squeeze(0))  # ablation
         dist0 = dist[:len(point1), len(point1):]
 
         return z1, z2, y1, y2, pred_logits, row_ind, col_ind, dist0, dist_cost.unsqueeze(0)
@@ -365,14 +316,11 @@ class VIC_Model(nn.Module):
 
         # window size: [left, right, top, bottom]
         left, right, top, bottom = window_size
-
-        # 将 crop 坐标范围归一化为 [-1, 1]，适用于 grid_sample
         x_min = (pts[:, 0] * W - left) / (W - 1) * 2 - 1
         x_max = (pts[:, 0] * W + right) / (W - 1) * 2 - 1
         y_min = (pts[:, 1] * H - top) / (H - 1) * 2 - 1
         y_max = (pts[:, 1] * H + bottom) / (H - 1) * 2 - 1
 
-        # 创建网格 grid: [N, out_size, out_size, 2]
         grid_y, grid_x = torch.meshgrid(
             torch.linspace(0, 1, out_size),
             torch.linspace(0, 1, out_size),
@@ -386,10 +334,8 @@ class VIC_Model(nn.Module):
         grid_y = grid_y.unsqueeze(0) * (y_max - y_min).unsqueeze(1).unsqueeze(2) + y_min.unsqueeze(1).unsqueeze(2)
         grid = torch.stack((grid_x, grid_y), dim=-1).to(device)  # [N, out_size, out_size, 2]
 
-        # 将输入图像扩展为 [N, C, H, W]
         z = z.expand(N, -1, -1, -1)
 
-        # 裁剪 + resize
         crops = F.grid_sample(z, grid, align_corners=True, mode='bilinear')
         return crops  # [N, C, out_size, out_size]
 
@@ -414,14 +360,6 @@ class VIC_Model(nn.Module):
         weight_cls = torch.ones_like(pred_score)
         distance = torch.zeros_like(pred_score)
 
-        # O2O
-        # for i in range(len(row_ind)):
-        #     distance[i] = dist[0][row_ind[i]][col_ind[i]]
-        #     if row_ind[i] < z1.shape[1] and col_ind[i] < z1.shape[1] and row_ind[i] == row_ind[i]:
-        #         gt_true[i] = 0
-        #     else:
-        #         weight_cls[i] = dist[0][row_ind[i]][col_ind[i]]
-        # O2M
         for i in range(len(row_ind)):
             distance[i] = dist[row_ind[i]][col_ind[i]]
             if row_ind[i] < z1.shape[1] and col_ind[i] < z1.shape[1]:  # and distance[i] < dist[0][row_ind[i]][row_ind[i]] + 0.2:
@@ -431,19 +369,11 @@ class VIC_Model(nn.Module):
 
         my_loss_cls = -gt_true * torch.log(pred_prob[:, 1]) - (1 - gt_true) * torch.log(pred_prob[:, 0])
         my_loss_cls = my_loss_cls.mean()
-        # my_loss_cls = (weight_cls*my_loss_cls).mean()
         loss_dict["test"] = torch.tensor(len(torch.argwhere(pred_class == gt_true)) / len(
-            pred_class)).cuda()  # To visualize the training of mlp (without grad)
-        # loss_ce = nn.CrossEntropyLoss()
-        # loss_cls = loss_ce(pred_logits, gt_true.long())
+            pred_class)).cuda()
 
         loss_dict["loss_cls"] = torch.sum(my_loss_cls).cuda()
 
-        """ KL Loss """
-        # from .extra_loss import kl_loss
-        # loss_kl = kl_loss(distance, labels)
-
-        # loss_dict["loss_kl"] = torch.tensor(loss_kl).cuda()
         loss_dict["scon_cost"] = loss_dict["scon_cost"].squeeze()
         loss_dict["hinge_cost"] = loss_dict["hinge_cost"].squeeze()
         loss_dict["all"] = loss_dict["scon_cost"] + loss_dict["hinge_cost"] * 0.1 + loss_dict[
@@ -475,16 +405,13 @@ class VIC_Model(nn.Module):
 
 
 def compute_relative_position(pts0, pts1):
-    pts0_expanded = pts0.unsqueeze(1)  # 形状变为 [n, 1, 2]
-    pts1_expanded = pts1.unsqueeze(0)  # 形状变为 [1, n, 2]
+    pts0_expanded = pts0.unsqueeze(1)  # [n, 1, 2]
+    pts1_expanded = pts1.unsqueeze(0)  # [1, n, 2]
 
-    # 计算坐标差值
-    diff = pts0_expanded - pts1_expanded  # 形状 [n, n, 2]
+    diff = pts0_expanded - pts1_expanded  # [n, n, 2]
 
-    # 计算平方距离并求和
-    squared_dist = (diff ** 2).sum(dim=-1)  # 形状 [n, n]
+    squared_dist = (diff ** 2).sum(dim=-1)  # [n, n]
 
-    # 开平方得到欧氏距离
     dist = torch.sqrt(squared_dist)
     return dist, diff
 
