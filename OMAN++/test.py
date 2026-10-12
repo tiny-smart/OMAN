@@ -59,11 +59,8 @@ def get_args_parser():
 
     # dataset parameters
     parser.add_argument('--dataset_file', default="SENSE")
-    parser.add_argument('--test_root', default='/data/bjwang/SENSE/test')
-    parser.add_argument('--ann_dir', default='/data/bjwang/SENSE/label_list_all')
-    # parser.add_argument('--dataset_file', default="Metro")
-    # parser.add_argument('--test_root', default='/data/bjwang/WuhanMetro/test')
-    # parser.add_argument('--ann_dir', default='/data/bjwang/WuhanMetro/json')
+    parser.add_argument('--test_root', default='test file path')
+    parser.add_argument('--ann_dir', default='label file path')
     parser.add_argument('--max_len', default=3000)
 
     # misc parameters
@@ -71,8 +68,7 @@ def get_args_parser():
     parser.add_argument('--gpu', default='0,1,2,3', help='device to use for training / testing')
     parser.add_argument('--seed', default=42, type=int)
 
-    parser.add_argument('--resume', default='outputs/SENSE/exp_VIC/checkpoint9.pth', help='resume from checkpoint')
-    # parser.add_argument('--resume', default='/home/bjwang/VICv3/pretrained/Sense.pth', help='resume from checkpoint')
+    parser.add_argument('--resume', default='./pretrained/Sense.pth', help='resume from checkpoint')
     parser.add_argument('--vis_dir', default="")
     parser.add_argument('--num_workers', default=1, type=int)
 
@@ -194,19 +190,6 @@ def main(args):
         model_without_ddp.load_state_dict(checkpoint['model'])
         cur_epoch = checkpoint['epoch'] if 'epoch' in checkpoint else 0
 
-        # """ joint test """
-        # pretraind_dict = torch.load('outputs/SENSE/exp_VIC/best_checkpoint.pth', map_location='cpu')
-        # model_dict = model.state_dict()
-        # # 只将pretraind_dict中那些在model_dict中的参数，提取出来
-        # state_dict = {k: v for k, v in pretraind_dict["model"].items()}
-        # # 将提取出来的参数更新到model_dict中，而model_dict有的，而state_dict没有的参数，不会被更新
-        # model_dict.update(state_dict)
-        # pretraind_dict2 = torch.load('outputs/SENSE/exp_VIC/checkpoint2.pth', map_location='cpu')
-        # state_dict2 = {k: v for k, v in pretraind_dict2["model"].items() if 'vic' in k and 'mlp' in k}
-        # model_dict.update(state_dict2)
-        # model_without_ddp.load_state_dict(model_dict)
-
-
     model.eval()
     video_results = {}
 
@@ -216,11 +199,6 @@ def main(args):
         interval = 75
     elif args.dataset_file == 'Metro':
         interval = 1
-
-# 1s: MAE:12.67, MSE:432.07, WRAE:18.56%, RMSE:20.79, RMAE:18.88%; D0:6.68, D1:9.84, D2:31.12, D3:38.38, D4:33.55,
-# 2s: MAE:7.59, MSE:183.38, WRAE:11.29%, RMSE:13.54, RMAE:11.49%; D0:4.23, D1:5.86, D2:13.27, D3:15.62, D4:36.36,
-# 4s: MAE:10.49, MSE:362.85, WRAE:13.84%, RMSE:19.05, RMAE:13.74%; D0:4.05, D1:9.36, D2:12.62, D3:21.25, D4:68.45,
-# 5s: MAE:12.14, MSE:438.76, WRAE:15.68%, RMSE:20.95, RMAE:15.41%; D0:4.25, D1:11.32, D2:16.62, D3:27.12, D4:71.82,
 
     start=time.time()
     with torch.no_grad():
@@ -238,15 +216,6 @@ def main(args):
             pos0, feature0 = read_pts(model, imgs[0, 0])
             pos0 = point_nms(pos0, imgs[0, 0])
 
-            # pos0, feature0 = read_pts_from_txt(pos_path0), []   # read points from txt
-            # pos0 = point_nms(pos0, imgs[0, 0])    # read points from txt
-
-            # pos0 = np.multiply(labels["pts"][0][0].numpy(),np.array([w, h])).astype(np.float32)   # GT
-            # pos0 = point_nms(pos0, imgs[0, 0])   # GT
-            # feature0 =[]    # GT
-
-            # save_pts(video_name, img_name0, pos0)
-            # feature0 = model.backbone(imgs[0, 0].cuda().unsqueeze(0)) # roi
             if args.distributed:
                 z0 = model.module.forward_single_image(
                     imgs[0, 0].cuda().unsqueeze(0), [pos0], feature0, True)
@@ -267,8 +236,6 @@ def main(args):
             outflow_lists = []
             pos_lists.append(pos0)
             inflow_lists.append([1 for _ in range(len(pos0))])
-            # if selected_idx[-1] != len(img_names)-1:
-            #     selected_idx.append(len(img_names)-1)
             for i in selected_idx:
                 img_name = img_names[i][0]
                 pos_path = os.path.join(
@@ -277,16 +244,7 @@ def main(args):
                 pos, feature1 = read_pts(model, imgs[0, i])
                 pos = point_nms(pos, imgs[0, i])
 
-                # pos, feature1 = read_pts_from_txt(pos_path), []   # read points from txt
-                # pos = point_nms(pos, imgs[0, i])
-
-                # pos = np.multiply(labels["pts"][i][0].numpy(),np.array([w, h])).astype(np.float32)     # GT
-                # pos = point_nms(pos, imgs[0, i])     # GT
-                # feature1 = []  # GT
-
-                # save_pts(video_name, img_name, pos)
                 pre_pre_z = pre_z
-                # feature1 = model.backbone(imgs[0, i].cuda().unsqueeze(0)) # roi
                 if args.distributed:
                     z1, z2, pre_z = model.module.forward_single_image(
                         imgs[0, i].cuda().unsqueeze(0), [pos], feature1, True, pre_z, [pre_pos])
@@ -296,84 +254,14 @@ def main(args):
                 z1 = F.normalize(z1, dim=-1).transpose(0, 1)
                 z2 = F.normalize(z2, dim=-1).transpose(0, 1)
 
-                # visualize attention map or similarity map
-                # vis_attn(imgs[0, i-interval].cuda().unsqueeze(0), imgs[0, i].cuda().unsqueeze(0), attention_map, pre_pos, pos, 3)
-                # sim_map = torch.einsum('bnc,bmc->bnm', torch.cat((z1, z2), dim=1), torch.cat((z1, z2), dim=1))
-                # vis_attn(imgs[0, i-interval].cuda().unsqueeze(0), imgs[0, i].cuda().unsqueeze(0), sim_map, pre_pos, pos, 1)
-
-                ''' Hungarian '''
-                # match_matrix = torch.bmm(z1, z2.transpose(1, 2))
-                #
-                # C = match_matrix.cpu().detach().numpy()[0]
-                # row_ind, col_ind = linear_sum_assignment(-C)
-
-                ''' Hungarian Only, No MLP '''
-                # sim_score = C[row_ind, col_ind]
-                # shared_mask = sim_score > 0.4
-                # pre_pedestrian_list = row_ind[shared_mask]
-                # pedestrian_list = col_ind[shared_mask]
-                # inflow_idx_list = [i for i in range(len(pos)) if i not in col_ind[shared_mask]]
-                # outflow_idx_list = [i for i in range(len(pos)) if i not in row_ind[shared_mask]]
-
-                ''' Hungarian, MLP '''
-                # sim_feat = z1[:, row_ind, :] * z2[:, col_ind, :]
-                # if args.distributed:
-                #     pred_logits = model.module.vic.regression(sim_feat.squeeze(0))
-                # else:
-                #     pred_logits = model.vic.regression(sim_feat.squeeze(0))
-                # pred_prob = F.softmax(pred_logits, dim=1)
-                # pred_score, pred_class = pred_prob.max(dim=1)
-                # pedestrian_list = col_ind[(1 - pred_class).bool().cpu().numpy()]
-                # pre_pedestrian_list = row_ind[(1 - pred_class).bool().cpu().numpy()]
-                # inflow_idx_list = [i for i in range(len(pos)) if i not in pedestrian_list]
-                # outflow_idx_list = [i for i in range(len(pre_pos)) if i not in pre_pedestrian_list]
-                # if inflow_idx_list:
-                #     for idx2 in inflow_idx_list:
-                #         for idx1 in range(z1.shape[1]):
-                #             sim_feat2 = z1[:, idx1, :] * z2[:, idx2, :]
-                #             if args.distributed:
-                #                 pred_logits2 = model.module.vic.regression(sim_feat2.squeeze(0))
-                #             else:
-                #                 pred_logits2 = model.vic.regression(sim_feat2.squeeze(0))
-                #             pred_prob2 = F.softmax(pred_logits2, dim=0)
-                #             pred_score2, pred_class2 = pred_prob2.max(dim=0)
-                #             if pred_class2 == 0:
-                #                 pedestrian_list = np.append(pedestrian_list, idx2)
-                #                 pre_pedestrian_list = np.append(pre_pedestrian_list, idx1)
-                #                 break
-                # inflow_idx_list = [i for i in range(len(pos)) if i not in pedestrian_list]
-                # outflow_idx_list = [i for i in range(len(pre_pos)) if i not in pre_pedestrian_list]
-
-                ''' No Hungarian, MLP Only '''
-                # pedestrian_list1 = []
-                # pre_pedestrian_list1 = []
-                # for idx2 in range(z2.shape[1]):
-                #     for idx1 in range(z1.shape[1]):
-                #         sim_feat2 = z1[:, idx1, :] * z2[:, idx2, :]
-                #         if args.distributed:
-                #             pred_logits2 = model.module.vic.regression(sim_feat2.squeeze(0))
-                #         else:
-                #             pred_logits2 = model.vic.regression(sim_feat2.squeeze(0))
-                #         pred_prob2 = F.softmax(pred_logits2, dim=0)
-                #         pred_score2, pred_class2 = pred_prob2.max(dim=0)
-                #         if pred_class2 == 0:
-                #             pedestrian_list1 = np.append(pedestrian_list1, idx2)
-                #             pre_pedestrian_list1 = np.append(pre_pedestrian_list1, idx1)
-                #             break
-                # inflow_idx_list1 = [i for i in range(len(pos)) if i not in pedestrian_list1]
-                # outflow_idx_list1 = [i for i in range(len(pre_pos)) if i not in pre_pedestrian_list1]
-
-
                 ''' einsum '''
                 sim_feats = torch.einsum('bnc,bmc->bnmc', z2, z1)  # [1, n, m, c]
                 sim_feats = sim_feats.view(1, -1, z1.shape[-1])  # [1, n*m, c]
                 pos_d = [[float(p[0] / w), float(p[1] / h)] for p in pos]
                 pre_pos_d = [[float(pp[0] / w), float(pp[1] / h)] for pp in pre_pos]
                 dist, diff = compute_relative_position(torch.tensor(pos_d), torch.tensor(pre_pos_d))
-                # dist_feat = pos2posemb2d(diff).cuda()
                 dist_feat = model.vic.dist_encoder(diff.cuda().transpose(1, 2)).transpose(1, 2)
                 dist_feat = F.normalize(dist_feat, dim=2).contiguous().view(1, -1, 256)
-                # sim_feats = torch.cat((sim_feats, dist_feat), dim=2)
 
                 if args.distributed:
                     pred_logits = model.module.vic.regression(sim_feats.squeeze(0))  # [n*m, num_classes]
@@ -410,17 +298,10 @@ def main(args):
                         outflow_list.append(0)
                 outflow_lists.append(outflow_list)
 
-                # draw(pos, video_name, img_name, inflow_list, cnt_list, len(img_names)-1, cnt_0, len(inflow_idx_list))
-                # draw_pair(pre_pos, pos, video_name, pre_img_name, img_name, outflow_list, inflow_list, pre_pedestrian_list, pedestrian_list)
-                # draw_failure(pre_pos, pos, video_name, pre_img_name, img_name, pedestrian_list, pre_pedestrian_list, z1, z2)
-
                 z_mask = np.array(outflow_list, dtype = bool)
                 mem = pre_pre_z[0][:len(pre_pos)][z_mask]
                 pre_z = [torch.cat((pre_z[0], mem), dim=0)] # cat mem + pre_mem
-                pre_mem = mem
                 pre_pos = np.concatenate((pos, pre_pos[z_mask]), 0)
-                # pre_pos=pos
-                pre_img_name = img_name
 
             # conver numpy to list
             pos_lists = [pos_lists[i].tolist() for i in range(len(pos_lists))]
