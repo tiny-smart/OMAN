@@ -388,14 +388,6 @@ class PET(nn.Module):
         losses['weight_dict'].update(vic_weight)
         losses['loss_dict'].update(vic_loss)
 
-        #
-        # if kwargs['epoch'] >= 1:
-        #     # loss_ts = compute_loss_ts(self, inputs['image_pair'])
-        #     loss_du = compute_duplicated_loss(pet_outputs)
-        #     # losses['loss_dict'].update(loss_ts)
-        #     losses['loss_dict'].update(loss_du)
-        #     losses["losses"] = losses["losses"] + losses['loss_dict']["all"] * 0.01 + losses['loss_dict']['loss_du'] # + losses['loss_dict']['loss_ts']
-        # else:
         losses["losses"] = losses["losses"] + losses['loss_dict']["all"] * 0.01
 
         return losses
@@ -437,11 +429,14 @@ class PET(nn.Module):
                 div_out[name] = out_sparse[name] if out_sparse is not None else out_dense[name]
         div_out['split_map_raw'] = outputs['split_map_raw']
 
-        # if inputs != []:
-        #     vic_outputs = self.vic(inputs, features)
-        # else:
-        #     vic_outputs = []
-        return div_out, features#, vic_outputs
+        outputs_points = div_out['pred_points'][0].cpu()
+        outputs_points = outputs_points.detach().numpy()
+        img_h, img_w = samples.tensors.shape[-2:]
+        points = [[float(point[1] * img_w), float(point[0] * img_h)] for point in outputs_points]
+        points = np.array(points, dtype ='float32')
+        points = duplicate(points, samples.tensors.squeeze(0))
+        
+        return div_out, features
 
     def forward_single_image(self, x, pts, feature, absolute=False, pre_z=None, pre_pts=None):
         z_lists = []
@@ -449,17 +444,11 @@ class PET(nn.Module):
         _, _, h, w = x.shape
 
         for b in range(x.shape[0]):
-            z_list = []
             z_lists = []
             for b in range(x.shape[0]):
-                z_list = []
                 z_lists = []
                 for pt in pts[b]:
-                    # z = self.vic.get_crops(x[b].unsqueeze(0), pt, absolute=absolute)
-                    # z = F.interpolate(z, (96, 96))
-                    # z_list.append(z)
                     pos_list.append([pt[0] / w, pt[1] / h])
-                # z = torch.cat(z_list, dim=0)
                 z = self.batched_get_crops(x[0].unsqueeze(0), pts[0], window_size=[64, 64, 64, 128], out_size=96)
                 z_lists1 = self.vic.backbone(z)
 
@@ -470,16 +459,11 @@ class PET(nn.Module):
                 location_feature1 = location_feature1.view(len(pos), 128, 3, 3)
                 z1 = torch.cat((z_lists1, location_feature1), dim=1)
 
-                # visualize feature of pedestrians
-                # visual_feat(z1)
-
                 z_lists.append(self.vic.input_proj(z1))
 
         if pre_z is not None:
             z1_lists = pre_z
             z2_lists = z_lists
-            # pos_emd_1 = torch.zeros_like(z1_lists[0]).cuda()
-            # pos_emd_2 = torch.zeros_like(z2_lists[0]).cuda()
 
             z1 = z1_lists[0].flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
             z2 = z2_lists[0].flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
@@ -489,8 +473,6 @@ class PET(nn.Module):
             pos_emd_2 = self.vic.pos_embedder(z2_lists[0].permute(0, 2, 3, 1)).flatten(2).unsqueeze(0).permute(1, 3, 0,
                                                                                                            2).flatten(0,
                                                                                                                       1)
-            # pos_emd_1 = pos_emd_1.flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
-            # pos_emd_2 = pos_emd_2.flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
 
             num, b, c = z1.shape
 
@@ -503,50 +485,27 @@ class PET(nn.Module):
             pts1 = torch.tensor([[float(point[0] / w), float(point[1] / h)] for point in pts])
             dist, diff = compute_relative_position(torch.cat((pre_pts1, pts1), dim=0),torch.cat((pre_pts1, pts1), dim=0))
             dist_feat = self.vic.dist_encoder(diff.cuda().transpose(1, 2)).transpose(1, 2)
-            # refer_feat = self.vic.dist_encoder(torch.tensor([[[0.2, 0.2]]]).cuda().transpose(1, 2)).transpose(1, 2)
-            # refer_cost = torch.norm(refer_feat, dim=2)
             dist_cost = torch.norm(dist_feat, dim=2)# - refer_cost  # shape: [n, m]
-            # src_mask = torch.ones(8, z.shape[0], z.shape[0]).cuda()
-            # dist_mask = dist
-            # dist_mask = dist_mask.repeat_interleave(9, dim=0).repeat_interleave(9, dim=1)
-            # ind1 = torch.argwhere(dist_mask < 0.2)
-            # ind2 = torch.argwhere(dist_mask < 0.2)
-            # ind3 = torch.argwhere(dist_mask < 0.2)
-            # src_mask[:3, ind1] = 0
-            # src_mask[3:6, ind2] = 0
-            # src_mask[6:8, ind3] = 0
-
-            # encoded_feature, attention_map = self.vic.encoder(z, pos=pos_embed, mask=src_mask)
 
             encoded_feature, attention_map = self.vic.encoder(z, pos=pos_embed, d=dist_cost.repeat_interleave(9, dim=0).repeat_interleave(9, dim=1).cuda())
-            # encoded_feature, attention_map = self.vic.encoder(z, pos=pos_embed)  # ablation
             encoded_feature1 = encoded_feature[:num]
             encoded_feature2 = encoded_feature[num:]
 
-            attention_map1 = attention_map[:, :num, num:]  # wrong or not?
-            # attn_map = attention_map1
+            attention_map1 = attention_map[:, :num, num:]
             attention_map1 = torch.mean(attention_map1, dim=2).transpose(0, 1).unsqueeze(1)
             attention_map2 = attention_map[:, num:, :num]
             attention_map2 = torch.mean(attention_map2, dim=2).transpose(0, 1).unsqueeze(1)
 
             encoded_feature1 = torch.cat((encoded_feature1, attention_map1), dim=2)
             encoded_feature2 = torch.cat((encoded_feature2, attention_map2), dim=2)
-            # encoded_feature1 = z1
-            # encoded_feature2 = z2
 
             length1 = encoded_feature1.shape[0]
             length2 = encoded_feature2.shape[0]
-
-            # visualize feature of pedestrians
-            # visual_feat(encoded_feature1.view(int(length1 / 9), 257, 3, 3))
 
             encoded_feature1 = encoded_feature1.contiguous().view(int(length1 / 9), 1, 256+1, 9).flatten(2)
             encoded_feature2 = encoded_feature2.contiguous().view(int(length2 / 9), 1, 256+1, 9).flatten(2)
             z1 = F.normalize(encoded_feature1, dim=-1)
             z2 = F.normalize(encoded_feature2, dim=-1)
-
-            # visualization of attention map
-            # visual_attn(attn_map)
 
             return z1, z2, z_lists , attention_map
         else:
@@ -559,17 +518,11 @@ class PET(nn.Module):
         _, _, h, w = x.shape
 
         for b in range(x.shape[0]):
-            z_list = []
             z_lists = []
             for b in range(x.shape[0]):
-                z_list = []
                 z_lists = []
                 for pt in pts[b]:
-                    # z = self.vic.get_crops(x[b].unsqueeze(0), pt, absolute=absolute)
-                    # z = F.interpolate(z, (96, 96))
-                    # z_list.append(z)
                     pos_list.append([pt[0] / w, pt[1] / h])
-                # z = torch.cat(z_list, dim=0)
                 z = self.batched_get_crops(x[0].unsqueeze(0), pts[0], window_size=win, out_size=96)
                 z_lists1 = self.vic.backbone(z)
 
@@ -580,16 +533,11 @@ class PET(nn.Module):
                 location_feature1 = location_feature1.view(len(pos), 128, 3, 3)
                 z1 = torch.cat((z_lists1, location_feature1), dim=1)
 
-                # visualize feature of pedestrians
-                # visual_feat(z1)
-
                 z_lists.append(self.vic.input_proj(z1))
 
         if pre_z is not None:
             z1_lists = pre_z
             z2_lists = z_lists
-            # pos_emd_1 = torch.zeros_like(z1_lists[0]).cuda()
-            # pos_emd_2 = torch.zeros_like(z2_lists[0]).cuda()
 
             z1 = z1_lists[0].flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
             z2 = z2_lists[0].flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
@@ -599,8 +547,6 @@ class PET(nn.Module):
             pos_emd_2 = self.vic.pos_embedder(z2_lists[0].permute(0, 2, 3, 1)).flatten(2).unsqueeze(0).permute(1, 3, 0,
                                                                                                            2).flatten(0,
                                                                                                                       1)
-            # pos_emd_1 = pos_emd_1.flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
-            # pos_emd_2 = pos_emd_2.flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
 
             num, b, c = z1.shape
 
@@ -613,50 +559,27 @@ class PET(nn.Module):
             pts1 = torch.tensor([[float(point[0] / w), float(point[1] / h)] for point in pts])
             dist, diff = compute_relative_position(torch.cat((pre_pts1, pts1), dim=0),torch.cat((pre_pts1, pts1), dim=0))
             dist_feat = self.vic.dist_encoder(diff.cuda().transpose(1, 2)).transpose(1, 2)
-            # refer_feat = self.vic.dist_encoder(torch.tensor([[[0.2, 0.2]]]).cuda().transpose(1, 2)).transpose(1, 2)
-            # refer_cost = torch.norm(refer_feat, dim=2)
-            dist_cost = torch.norm(dist_feat, dim=2)# - refer_cost  # shape: [n, m]
-            # src_mask = torch.ones(8, z.shape[0], z.shape[0]).cuda()
-            # dist_mask = dist
-            # dist_mask = dist_mask.repeat_interleave(9, dim=0).repeat_interleave(9, dim=1)
-            # ind1 = torch.argwhere(dist_mask < 0.2)
-            # ind2 = torch.argwhere(dist_mask < 0.2)
-            # ind3 = torch.argwhere(dist_mask < 0.2)
-            # src_mask[:3, ind1] = 0
-            # src_mask[3:6, ind2] = 0
-            # src_mask[6:8, ind3] = 0
-
-            # encoded_feature, attention_map = self.vic.encoder(z, pos=pos_embed, mask=src_mask)
+            dist_cost = torch.norm(dist_feat, dim=2)
 
             encoded_feature, attention_map = self.vic.encoder(z, pos=pos_embed, d=dist_cost.repeat_interleave(9, dim=0).repeat_interleave(9, dim=1).cuda())
-            # encoded_feature, attention_map = self.vic.encoder(z, pos=pos_embed)
             encoded_feature1 = encoded_feature[:num]
             encoded_feature2 = encoded_feature[num:]
 
-            attention_map1 = attention_map[:, :num, num:]  # wrong or not?
-            # attn_map = attention_map1
+            attention_map1 = attention_map[:, :num, num:]
             attention_map1 = torch.mean(attention_map1, dim=2).transpose(0, 1).unsqueeze(1)
             attention_map2 = attention_map[:, num:, :num]
             attention_map2 = torch.mean(attention_map2, dim=2).transpose(0, 1).unsqueeze(1)
 
             encoded_feature1 = torch.cat((encoded_feature1, attention_map1), dim=2)
             encoded_feature2 = torch.cat((encoded_feature2, attention_map2), dim=2)
-            # encoded_feature1 = z1
-            # encoded_feature2 = z2
 
             length1 = encoded_feature1.shape[0]
             length2 = encoded_feature2.shape[0]
-
-            # visualize feature of pedestrians
-            # visual_feat(encoded_feature1.view(int(length1 / 9), 257, 3, 3))
 
             encoded_feature1 = encoded_feature1.contiguous().view(int(length1 / 9), 1, 256+1, 9).flatten(2)
             encoded_feature2 = encoded_feature2.contiguous().view(int(length2 / 9), 1, 256+1, 9).flatten(2)
             z1 = F.normalize(encoded_feature1, dim=-1)
             z2 = F.normalize(encoded_feature2, dim=-1)
-
-            # visualization of attention map
-            # visual_attn(attn_map)
 
             return z1, z2, z_lists , attention_map
         else:
@@ -706,36 +629,28 @@ class PET(nn.Module):
 
         z_list = []
         z_lists = []
-        # z = torch.cat(z_list, dim=0)
         z = onnx_batched_get_crops(x[0].unsqueeze(0), pts[0], window_size=[64, 64, 64, 128], out_size=96)
         z_lists1 = self.vic.backbone(z)
 
         """ Location Feature """
         pos = torch.stack([
-            pts[0][:, 0] / w,  # x坐标乘以宽度
-            pts[0][:, 1] / h  # y坐标乘以高度
-        ], dim=-1).float().cuda()  # .half()#onnx_half
+            pts[0][:, 0] / w,  
+            pts[0][:, 1] / h  
+        ], dim=-1).float().cuda() 
         location_emb1 = pos2posemb2d(pos)
         location_feature1 = self.vic.location_projection(location_emb1.transpose(0, 1)).transpose(0, 1)
         location_feature1 = location_feature1.view(-1, 128, 3, 3)
         z1 = torch.cat((z_lists1, location_feature1), dim=1)
 
-        # visualize feature of pedestrians
-        # visual_feat(z1)
-
         z_lists = self.vic.input_proj(z1)
 
         z1_lists = pre_z
         z2_lists = z_lists
-        # pos_emd_1 = torch.zeros_like(z1_lists[0]).cuda()
-        # pos_emd_2 = torch.zeros_like(z2_lists[0]).cuda()
 
         z1 = z1_lists.flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
         z2 = z2_lists.flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
         pos_emd_1 = self.vic.pos_embedder(z1_lists.permute(0, 2, 3, 1)).flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0,1)
         pos_emd_2 = self.vic.pos_embedder(z2_lists.permute(0, 2, 3, 1)).flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0,1)
-        # pos_emd_1 = pos_emd_1.flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
-        # pos_emd_2 = pos_emd_2.flatten(2).unsqueeze(0).permute(1, 3, 0, 2).flatten(0, 1)
 
         num, b, c = z1.shape
 
@@ -749,38 +664,20 @@ class PET(nn.Module):
                                                torch.cat((pre_pts1, pts1), dim=0))
         dist_feat = self.vic.dist_encoder(diff.cuda().transpose(1, 2))
         dist_feat = dist_feat.transpose(1, 2)
-        # refer_feat = self.vic.dist_encoder(torch.tensor([[[0.2, 0.2]]]).cuda().transpose(1, 2)).transpose(1, 2)
-        # refer_cost = torch.norm(refer_feat, dim=2)
-        dist_cost = torch.norm(dist_feat, dim=2)  # - refer_cost  # shape: [n, m]
-        # src_mask = torch.ones(8, z.shape[0], z.shape[0]).cuda()
-        # dist_mask = dist
-        # dist_mask = dist_mask.repeat_interleave(9, dim=0).repeat_interleave(9, dim=1)
-        # ind1 = torch.argwhere(dist_mask < 0.2)
-        # ind2 = torch.argwhere(dist_mask < 0.2)
-        # ind3 = torch.argwhere(dist_mask < 0.2)
-        # src_mask[:3, ind1] = 0
-        # src_mask[3:6, ind2] = 0
-        # src_mask[6:8, ind3] = 0
 
-        # encoded_feature, attention_map = self.vic.encoder(z, pos=pos_embed, mask=src_mask)
-
+        dist_cost = torch.norm(dist_feat, dim=2)
         encoded_feature, attention_map = self.vic.encoder(z, pos=pos_embed,
                                                           d=dist_cost.repeat_interleave(9, dim=0).repeat_interleave(9, dim=1).cuda())
-        # encoded_feature, attention_map = self.vic.encoder(z, pos=pos_embed)  # ablation
         encoded_feature1 = encoded_feature[:num]
         encoded_feature2 = encoded_feature[num:]
 
-        attention_map1 = attention_map[:, :num, num:]  # wrong or not?
-        # attn_map = attention_map1
+        attention_map1 = attention_map[:, :num, num:]
         attention_map1 = torch.mean(attention_map1, dim=2).transpose(0, 1).unsqueeze(1)
         attention_map2 = attention_map[:, num:, :num]
         attention_map2 = torch.mean(attention_map2, dim=2).transpose(0, 1).unsqueeze(1)
 
         encoded_feature1 = torch.cat((encoded_feature1, attention_map1), dim=2)
         encoded_feature2 = torch.cat((encoded_feature2, attention_map2), dim=2)
-        # encoded_feature1 = z1
-        # encoded_feature2 = z2
-
 
         encoded_feature1 = encoded_feature1.contiguous().view(-1, 1, 256 + 1, 9).flatten(2)
         encoded_feature2 = encoded_feature2.contiguous().view(-1, 1, 256 + 1, 9).flatten(2)
@@ -801,13 +698,11 @@ class PET(nn.Module):
         widths = left + right
         heights = top + bottom
 
-        # 将 crop 坐标范围归一化为 [-1, 1]，适用于 grid_sample
         x_min = (pts[:, 0] - left) / (W - 1) * 2 - 1
         x_max = (pts[:, 0] + right) / (W - 1) * 2 - 1
         y_min = (pts[:, 1] - top) / (H - 1) * 2 - 1
         y_max = (pts[:, 1] + bottom) / (H - 1) * 2 - 1
 
-        # 创建网格 grid: [N, out_size, out_size, 2]
         grid_y, grid_x = torch.meshgrid(
             torch.linspace(0, 1, out_size),
             torch.linspace(0, 1, out_size),
@@ -818,13 +713,31 @@ class PET(nn.Module):
         grid_y = grid_y.unsqueeze(0) * (y_max - y_min).unsqueeze(1).unsqueeze(2) + y_min.unsqueeze(1).unsqueeze(2)
         grid = torch.stack((grid_x, grid_y), dim=-1).cuda()  # [N, out_size, out_size, 2]
 
-        # 将输入图像扩展为 [N, C, H, W]
         z = z.expand(N, -1, -1, -1)
-
-        # 裁剪 + resize
         crops = F.grid_sample(z, grid, align_corners=True, mode='bilinear')
         return crops  # [N, C, out_size, out_size]
 
+def duplicate(outputs_points, frame):
+    del_list = []
+    del_pts = []
+    for row1 in range(len(outputs_points)):
+        if row1 not in del_list:
+            pts1 = np.array([outputs_points[row1][0], outputs_points[row1][1]])
+            for row2 in range(row1 + 1, len(outputs_points)):
+                pts2 = np.array([outputs_points[row2][0], outputs_points[row2][1]])
+                # 计算相似度来作为阈值条件
+                dist = np.linalg.norm(pts1 - pts2)
+                if 16 > dist > 0:
+                    f1 = frame[:, int(pts2[0]) - int(dist):int(pts2[0]) + int(dist),
+                         int(pts2[1]) - int(dist):int(pts2[1]) + int(dist)]
+                    f2 = frame[:, int(pts2[0]) - int(dist):int(pts2[0]) + int(dist),
+                         int(pts2[1]) - int(dist):int(pts2[1]) + int(dist)]
+                    similarity = F.cosine_similarity(f1, f2, dim=0).cpu()
+                    if torch.mean(similarity) > 0.8:
+                        del_list.append(row2)
+                        del_pts.append(np.array([outputs_points[row2][0], outputs_points[row2][1]]))
+    outputs_points = np.delete(outputs_points, del_list, axis=0)
+    return outputs_points
 
 class SetCriterion(nn.Module):
     """ Compute the loss for PET:

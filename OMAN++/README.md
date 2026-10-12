@@ -2,7 +2,7 @@
 
 This repository includes the implementation of the manuscript:
 
-[**Crowded Video Individual Counting Informed by Social Grouping and Spatial-Temporal Displacement Priors**](https://github.com/tiny-smart/OMAN) (TIP)
+[**Crowded Video Individual Counting Informed by Social Grouping and Spatial-Temporal Displacement Priors**](https://github.com/tiny-smart/OMAN) (TIP 2026)
 
 Hao Lu<sup>1</sup>, Xuhui Zhu<sup>1</sup>, Wenjing Zhang<sup>1</sup>, Yanan Li<sup>2</sup>, Xiang Bai<sup>1</sup>
 
@@ -53,13 +53,7 @@ OMAN++
 ```
 
 ## Model Zoo
-TODO
-| Dataset | Link |
-| :-- | :-- |
-| SenseCrowd | [[Baidu disk]]() [[Google disk]]() |
-| HT21 | [[Baidu disk]]() [[Google disk]]()  |
-| MovingDroneCrowd | [[Baidu disk]]() [[Google disk]]() |
-| WuhanMetroCrowd | [[Baidu disk]]() [[Google disk]]() |
+Pretrained models are available at [[Baidu disk]](https://pan.baidu.com/s/1Cfyq3mV-CleJwDlvXlww5A?pwd=g9j2) and [[Google disk]](https://drive.google.com/drive/folders/1lvLWBbbTAPY9jOxBj9MMkYXXLQ7CYuQN?usp=share_link)
 
 ## Installation
 
@@ -87,7 +81,7 @@ pip install -r requirements.txt
 
 - SenseCrowd: download from [Baidu disk](https://pan.baidu.com/s/1OYBSPxgwvRMrr6UTStq7ZQ?pwd=64xm#list/path=%2F) or the [original dataset link](https://github.com/HopLee6/VSCrowd-Dataset).
 - CroHD / MovingDroneCrowd / UAVVIC: please prepare the datasets following their official instructions.
-- **WuhanMetroCrowd [Final Version]**: Coming soon. [Baidu disk]() or [Google disk](). Based on the preview version reported in the paper, we have thoroughly re-inspected the dataset and rectified its annotation errors. We will report OMAN++'s result on final version in this repo.
+- **WuhanMetroCrowd [Final Version]**: [Baidu disk](https://pan.baidu.com/s/108pYcxp1JkNaV27K1O6Ivg?pwd=jt3h) or [Google disk](https://drive.google.com/file/d/1qin0o5TGU0QrFR0AA3weFYY62rWDgyTh/view?usp=share_link). Based on the preview version reported in the paper, we have thoroughly re-inspected the dataset, rectified annotation errors, and extend the dataset. We will report OMAN++'s result on final version in this repo.
 
 
 
@@ -102,8 +96,7 @@ python train.py
 or launch with multiple GPUs (see `train.sh`):
 
 ```
-CUDA_VISIBLE_DEVICES='0,1,2,3' python -m torch.distributed.launch \
-    --nproc_per_node=4 --master_port=10001 --use_env train.py
+bash train.sh
 ```
 
 ## Inference
@@ -134,10 +127,10 @@ python eval_metrics_Metro.py
 
 ## Results
 Results on WuhanMetroCrowd:
-| Dataset | MAE | MSE | WRAE |
-| :-- | :-- | :-- | :-- |
-| WuhanMetroCrowd-Preview (paper) | - | - | - |
-| WuhanMetroCrowd-Final (repo) | - | - | - |
+| Dataset | Clips | Frames | Annotations | MAE | MSE | WRAE |
+| :--: | :--: | :--: | :--: | :--: | :--: | :--: |
+| WuhanMetroCrowd-Preview (paper) | 80 | 11,925 | 223,662 | 87.1 | 160.2 | 19.8 |
+| WuhanMetroCrowd-Final (repo) | 99 | 14,486 | 245,085 | - | - | - |
 
 ## Citation
 

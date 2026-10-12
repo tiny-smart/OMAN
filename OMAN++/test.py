@@ -9,8 +9,6 @@ from scipy.optimize import linear_sum_assignment
 from tqdm import tqdm
 
 from models.vic import compute_relative_position, pos2posemb2d
-from my_demo.visualize_feature import vis_attn
-from my_plot import draw, draw_pair, draw_failure
 import argparse
 import numpy as np
 import torch
@@ -92,51 +90,6 @@ def read_pts(model, img):
         points.append([1, 1])
     return np.array(points, dtype ='float32'), features['4x'].tensors
 
-def read_pts_from_txt(path):
-    with open(path, "r") as f:
-        lines = f.readlines()
-        pts = []
-        for line in lines:
-            line = line.strip().split(",")
-            pts.append([float(line[0]), float(line[1])])
-        pts = np.array(pts, dtype='float32')
-    return pts
-
-def point_nms(outputs_points, frame):
-    # remove nearby points with similar feature
-    del_list = []
-    del_pts = []
-    for row1 in range(len(outputs_points)):
-        if row1 not in del_list:
-            pts1 = np.array([outputs_points[row1][0], outputs_points[row1][1]])
-            for row2 in range(row1 + 1, len(outputs_points)):
-                pts2 = np.array([outputs_points[row2][0], outputs_points[row2][1]])
-                # 计算相似度来作为阈值条件
-                dist = np.linalg.norm(pts1 - pts2)
-                if 16 > dist > 0:
-                    # f1 = My_Static.last_features_4x[0,:,int(pts1[1]),int(pts1[0])]
-                    # f2 = My_Static.last_features_4x[0,:,int(pts2[1]),int(pts2[0])]
-                    f1 = frame[:, int(pts2[0]) - int(dist):int(pts2[0] + int(dist)),
-                         int(pts2[1]) - int(dist):int(pts2[1]) + int(dist)]
-                    f2 = frame[:, int(pts2[0]) - int(dist):int(pts2[0] + int(dist)),
-                         int(pts2[1]) - int(dist):int(pts2[1]) + int(dist)]
-                    similarity = F.cosine_similarity(f1, f2, dim=0).cpu()
-                    if torch.mean(similarity) > 0.8:
-                        del_list.append(row2)
-                        del_pts.append(np.array([outputs_points[row2][0], outputs_points[row2][1]]))
-    outputs_points = np.delete(outputs_points, del_list, axis=0)
-    return outputs_points
-
-def save_pts(video_name, img_name, points_list):
-    """ save locator results """
-    txt_path = './locator/' + video_name
-    if not os.path.exists(txt_path):
-        os.mkdir(txt_path)
-    f = open(txt_path + '/' + img_name + '.txt', "w")
-    for pts in points_list:
-        f.write(str(pts[0]) + ',' + str(pts[1]) + '\n')
-    f.close()
-
 def main(args):
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     plot_flag = 1
@@ -214,7 +167,6 @@ def main(args):
             print(pos_path0)
 
             pos0, feature0 = read_pts(model, imgs[0, 0])
-            pos0 = point_nms(pos0, imgs[0, 0])
 
             if args.distributed:
                 z0 = model.module.forward_single_image(
@@ -242,7 +194,6 @@ def main(args):
                     "locator", video_name, img_name + ".txt")
 
                 pos, feature1 = read_pts(model, imgs[0, i])
-                pos = point_nms(pos, imgs[0, i])
 
                 pre_pre_z = pre_z
                 if args.distributed:
