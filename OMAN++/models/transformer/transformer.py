@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 import math
-
+import torch.nn as nn
 
 
 def pos2posemb2d(pos, num_pos_feats=128, temperature=10000):
@@ -354,12 +354,6 @@ def _get_activation_fn(activation):
     raise RuntimeError(F"activation should be relu/gelu, not {activation}.")
 
 
-import math
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-
 class MultiheadAttention(nn.Module):
     def __init__(self, embed_dim, num_heads, dropout=0.1):
         super().__init__()
@@ -369,7 +363,6 @@ class MultiheadAttention(nn.Module):
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
 
-        # 三个线性投影层
         self.q_proj = nn.Linear(embed_dim, embed_dim)
         self.k_proj = nn.Linear(embed_dim, embed_dim)
         self.v_proj = nn.Linear(embed_dim, embed_dim)
@@ -380,7 +373,6 @@ class MultiheadAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, key=None, value=None, key_padding_mask=None, attn_mask=None, batch_first=False, d=None):
-        # 处理 batch_first 参数
         if batch_first:
             x = x.transpose(0, 1)
             if key is not None:
@@ -388,7 +380,6 @@ class MultiheadAttention(nn.Module):
             if value is not None:
                 value = value.transpose(0, 1)
 
-        # 输入形状：(seq_len, batch_size, embed_dim)
         q = self.q_proj(x)
         k = self.k_proj(key) if key is not None else x
         v = self.v_proj(value) if value is not None else x
@@ -400,20 +391,17 @@ class MultiheadAttention(nn.Module):
 
         batch_size = x.size(1)
 
-        # 分割多头
         q = q.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)  # (B, H, L, D)
         k = k.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
         v = v.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
         # if d is not None:
         #     d = d.view(batch_size, 1, d.shape[0], d.shape[1]).repeat_interleave(self.num_heads, dim=1)
 
-        # 计算注意力分数
         attn_scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.head_dim)  # (B, H, L, L)
 
         # if d is not None:
         #     attn_scores = attn_scores * d
 
-        # 处理 attention_mask
         if attn_mask is not None:
             if attn_mask.dim() == 2:
                 attn_mask = attn_mask.unsqueeze(0).unsqueeze(0)
@@ -422,7 +410,6 @@ class MultiheadAttention(nn.Module):
             attn_mask = attn_mask.expand(-1, self.num_heads, -1, -1)
             attn_scores = attn_scores + attn_mask
 
-        # 处理 key_padding_mask
         if key_padding_mask is not None:
             key_padding_mask = key_padding_mask.unsqueeze(1).unsqueeze(2)
             attn_scores = attn_scores.masked_fill(key_padding_mask, float('-inf'))
@@ -430,15 +417,10 @@ class MultiheadAttention(nn.Module):
         attn_weights = F.softmax(attn_scores, dim=-1)
 
         if d is not None:
-            # 替代方案
             def efficient_repeat_interleave(x, repeats, dim=1):
-                # 假设 x.shape = [B, C, H, W]
                 shape = list(x.shape)
-                # 在目标维度前插入一个维度 [B, C, H, W] -> [B, C, 1, H, W]
                 x = x.unsqueeze(dim + 1)
-                # 扩展新维度 [B, C, 1, H, W] -> [B, C, repeats, H, W]
                 x = x.expand(shape[0], shape[1], repeats, *shape[2:])
-                # 合并维度 [B, C, repeats, H, W] -> [B, C*repeats, H, W]
                 return x.reshape(shape[0], shape[1] * repeats, *shape[2:])
 
             d = efficient_repeat_interleave(d, 8, dim=1)  # onnx
@@ -448,15 +430,12 @@ class MultiheadAttention(nn.Module):
 
         attn_weights = self.dropout(attn_weights)
 
-        # 计算输出
         attn_output = torch.matmul(attn_weights, v)  # (B, H, L, D)
         attn_output = attn_output.transpose(1, 2).contiguous()  # (B, L, H, D)
         attn_output = attn_output.view(-1, batch_size, self.embed_dim)  # (B, L, D)
 
-        # 最终线性变换
         attn_output = self.out_proj(attn_output)
 
-        # 恢复 batch_first 格式
         if batch_first:
             attn_output = attn_output.transpose(0, 1)
 
