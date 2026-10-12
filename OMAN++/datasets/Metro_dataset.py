@@ -86,26 +86,8 @@ class VideoDataset(VisionDataset):
 
                     cnt = len(label_list['shapes'])
 
-                    # if mask_points != []:
-                    #     for k in range(len(label_list['shapes'])):
-                    #         if label_list['shapes'][k]['label'] in ['mask', 'Mask']:
-                    #             mask_box = []
-                    #             for j in range(len(label_list['shapes'][k]['points'])):
-                    #                 mask_box.append(list(map(int, label_list['shapes'][k]['points'][j])))
-                    #             mask_points.append(np.array(mask_box))
-
                     file_name = prefix + '_' + str(file).zfill(idx_len) + '.jpg'
                     width, height = label_list["imageWidth"], label_list["imageHeight"]
-
-                    ''' mask '''
-                    # mask_points = []
-                    # for k in range(cnt):
-                    #     if label_list['shapes'][k]['label'] in ['mask','Mask'] and mask_flag == 1:
-                    #         cnt = cnt - 1
-                    #         for j in range(len(label_list['shapes'][k]['points'])):
-                    #             mask_points.append(list(map(int, label_list['shapes'][k]['points'][j])))
-                    #         mask_flag = 0
-                    #         break
 
                     points = []
                     for k in range(cnt):
@@ -222,12 +204,6 @@ class VideoDataset(VisionDataset):
                     for i in range(len(mask_points)):
                         cv2.fillPoly(img, [np.array(mask_points[i])], (0, 0, 0))
 
-                # import matplotlib.pyplot as plt
-                # plt.imshow(img)
-                # plt.title("Masked Image")
-                # plt.axis('off')
-                # plt.show()
-                #
                 img = self.transforms(image=img)["image"]
 
                 imgs.append(img)
@@ -268,7 +244,6 @@ class PairDataset(VisionDataset):
             mask_points = []
             file_list = os.listdir(annotation_path)
             for i in range(len(file_list)):
-                # 把文件名里的数字提出来排序
                 split_file_list = file_list[i].rsplit('_', 1)
                 if len(split_file_list) == 1:
                     prefix = ''
@@ -280,7 +255,7 @@ class PairDataset(VisionDataset):
 
             idx_len = len(idx)
             file_index = sorted(file_index)
-            total_label = []  # 统计所有文件的label标签数量
+            total_label = []
             video_name = annotation_path.split('/')[-1].split('.')[0]
             cnt = 0
             i = 0
@@ -289,13 +264,6 @@ class PairDataset(VisionDataset):
 
             for file in file_index:
                 j = 0
-                pedestrian_num = pedestrian_cnt = 0
-                inflow_num = inflow_cnt = 0
-                outflow_num = outflow_cnt = 0
-                both_num = both_cnt = 0
-
-                # filename = path + 'IMG_' + str(file) + '.json'
-                # filename = annotation_path + '/img_' + str(file).zfill(4) + '.json'
                 if prefix == '':
                     filename = os.path.join(annotation_path, str(file).zfill(idx_len)) + '.json'
                 else:
@@ -323,18 +291,12 @@ class PairDataset(VisionDataset):
                               label_list['shapes'][j]['points'][0][1] / height]
                     bboxes[j] = [pts[j, 0] - 48/ width, pts[j, 1] - 48/ width, pts[j, 0] + 48/ height, pts[j, 1] + 48/ height]
                     if label_list['shapes'][j]['label'] == 'pedestrian' or label_list['shapes'][j]['label'] == 'Pedestrian' or label_list['shapes'][j]['label'] == 'pedestrain':
-                        # pedestrian_pts[pedestrian_cnt] = [label_list['shapes'][j]['points'][0][0] / width,
-                        #                                      label_list['shapes'][j]['points'][0][1] / height]
                         pedestrian_pts.append(pts[j])
                         pedestrian_cnt += 1
                     elif label_list['shapes'][j]['label'] == 'inflow' or label_list['shapes'][j]['label'] == 'Inflow':
-                        # inflow_pts[inflow_cnt] = [label_list['shapes'][j]['points'][0][0] / width,
-                        #                           label_list['shapes'][j]['points'][0][1] / height]
                         inflow_pts.append(pts[j])
                         inflow_cnt += 1
                     elif label_list['shapes'][j]['label'] == 'outflow' or label_list['shapes'][j]['label'] == 'Outflow':
-                        # outflow_pts[outflow_cnt] = [label_list['shapes'][j]['points'][0][0] / width,
-                        #                             label_list['shapes'][j]['points'][0][1] / height]
                         outflow_pts.append(pts[j])
                         outflow_cnt += 1
                     elif label_list['shapes'][j]['label'] == 'both' or label_list['shapes'][j]['label'] == 'Both':
@@ -343,8 +305,6 @@ class PairDataset(VisionDataset):
 
                     elif label_list['shapes'][j]['label'] in ['mask','Mask']:
                         ''' mask '''
-                        # cnt = cnt - 1
-                        # mask_points.append(list(map(int, label_list['shapes'][j]['points'][k])))
                         if mask_points != []:
                             mask_box = []
                             for k in range(len(label_list['shapes'][j]['points'])):
@@ -408,9 +368,7 @@ class PairDataset(VisionDataset):
         fused_pts_list1 = pair["1"]["pedestrian_pts"] + pair["1"]["outflow_pts"]
         independ0_list = pair["0"]["outflow_pts"] + pair["0"]["both_pts"]
         independ1_list = pair["1"]["inflow_pts"] + pair["1"]["both_pts"]
-        # fused_num = len(pair["0"]["inflow_pts"]) + len(pair["0"]["pedestrian_pts"])
         fused_num = len(fused_pts_list0)
-        # print(video_name,img_name1,fused_num,len(pair["0"]["pedestrian_pts"]),len(pair["0"]["inflow_pts"]))
         if len(fused_pts_list1) == 0:
             fused_pts_list1 = -1 * np.ones((len(fused_pts_list0), 2))
 
@@ -472,25 +430,12 @@ class PairDataset(VisionDataset):
         fused_pts1 = torch.from_numpy(fused_pts1).float()
         fused_pts0 = torch.from_numpy(fused_pts0).float()
 
-        # TODO: 不能简单跳过，两种方法：
-        # TODO： ~1.将所有点送入PET，随机选取部分点送入VIC    2.随即裁剪一个区域来训练VIC
         max_num = 150
         if self.train and fused_num >= max_num:
             mask = random.sample(range(fused_num), max_num)
             fused_pts0[:max_num] = fused_pts0[mask]
             fused_pts1[:max_num] = fused_pts1[mask]
             fused_num = max_num
-
-        # visualization
-        # cv2_img0=inverse_normalize(img0).permute(1,2,0).detach().cpu().numpy().astype(np.uint8)
-        # cv2_img1=inverse_normalize(img1).permute(1,2,0).detach().cpu().numpy().astype(np.uint8)
-        # img_pair=np.concatenate([cv2_img0,cv2_img1],axis=1)
-        # img_pair=cv2.cvtColor(img_pair,cv2.COLOR_RGB2BGR)
-        # for pt0,pt1 in zip(fused_pts0,fused_pts1):
-        #     cv2.circle(img_pair,(int(pt0[0]*1280),int(pt0[1]*720)),5,(0,0,255),-1)
-        #     cv2.circle(img_pair,(int(pt1[0]*1280)+1280,int(pt1[1]*720)),5,(0,0,255),-1)
-        #     cv2.line(img_pair,(int(pt0[0]*1280),int(pt0[1]*720)),(int(pt1[0]*1280)+1280,int(pt1[1]*720)),(0,0,255),2)
-        # cv2.imwrite(f"outputs/vision/{video_name}_{img_name1}_{img_name2}.jpg",img_pair)
 
         ref_pts = torch.stack([fused_pts0, fused_pts1], dim=0)
         labels = {
@@ -515,8 +460,8 @@ class PairDataset(VisionDataset):
         inputs = {
             "h": pair["0"]["height"],
             "w": pair["0"]["width"],
-            "image_pair": x,  # 帧配对 x = torch.cat([img0, img1], dim=0)
-            "ref_pts": ref_pts,  # 点配对 ref_pts = torch.stack([fused_pts0, fused_pts1], dim=0)
+            "image_pair": x,  # x = torch.cat([img0, img1], dim=0)
+            "ref_pts": ref_pts,  # ref_pts = torch.stack([fused_pts0, fused_pts1], dim=0)
             "ref_num": fused_num,  # shared pedestrian num
             "independ_pts0": torch.from_numpy(independ_pts0).float(),  # outflow/both pt
             "independ_pts1": torch.from_numpy(independ_pts1).float(),  # inflow/both pt

@@ -140,7 +140,6 @@ class VideoDataset(VisionDataset):
         }
         return imgs, labels
 
-# TODO: 训练时随机初始化起始帧为第0-14帧
 class PairDataset(VisionDataset):
     def __init__(self, root: str, annotation_dir: str, max_len: int, transforms: Callable[..., Any] | None = None,
                  transform: Callable[..., Any] | None = None, target_transform: Callable[..., Any] | None = None,
@@ -254,23 +253,6 @@ class PairDataset(VisionDataset):
         independ0_list = []
         independ1_list = []
 
-        '''  ROI  '''
-        # scale = 0.6
-        # img0 = torch.nn.functional.upsample_bilinear(img0.unsqueeze(0), scale_factor=scale).squeeze(0)
-        # pts_0 *= scale
-        # img1 = torch.nn.functional.upsample_bilinear(img1.unsqueeze(0), scale_factor=scale).squeeze(0)
-        # pts_1 *= scale
-        # if img0.shape[1] % 128 != 0 or img0.shape[2] % 128 != 0:
-        #     scale = img0.shape[2]
-        #     img0 = torch.nn.functional.interpolate(img0.unsqueeze(0),[128 * (img0.shape[1] // 128), 128 * (img0.shape[2] // 128)]).squeeze(0)
-        #     scale = img0.shape[2] / scale
-        #     pts_0 *= scale
-        # if img1.shape[1] % 128 != 0 or img1.shape[2] % 128 != 0:
-        #     scale = img1.shape[2]
-        #     img1 = torch.nn.functional.interpolate(img1.unsqueeze(0),[128 * (img1.shape[1] // 128), 128 * (img1.shape[2] // 128)]).squeeze(0)
-        #     scale = img1.shape[2] / scale
-        #     pts_1 *= scale
-
         for pt, id in zip(pts_0, id_0):
             if id in id_1:
                 fused_pts_list0.append(pt)
@@ -313,25 +295,12 @@ class PairDataset(VisionDataset):
         fused_pts1 = torch.from_numpy(fused_pts1).float()
         fused_pts0 = torch.from_numpy(fused_pts0).float()
 
-        # TODO: 不能简单跳过，两种方法：
-        # TODO： ~1.将所有点送入PET，随机选取部分点送入VIC    2.随即裁剪一个区域来训练VIC
         max_num = 130
         if self.train and fused_num >= max_num:
             mask = random.sample(range(fused_num), max_num)
             fused_pts0[:max_num] = fused_pts0[mask]
             fused_pts1[:max_num] = fused_pts1[mask]
             fused_num = max_num
-
-        ''' Visualization '''
-        # cv2_img0=inverse_normalize(img0).permute(1,2,0).detach().cpu().numpy().astype(np.uint8)
-        # cv2_img1=inverse_normalize(img1).permute(1,2,0).detach().cpu().numpy().astype(np.uint8)
-        # img_pair=np.concatenate([cv2_img0,cv2_img1],axis=1)
-        # img_pair=cv2.cvtColor(img_pair,cv2.COLOR_RGB2BGR)
-        # for pt0,pt1 in zip(fused_pts0,fused_pts1):
-        #     cv2.circle(img_pair,(int(pt0[0]*1280),int(pt0[1]*720)),5,(0,0,255),-1)
-        #     cv2.circle(img_pair,(int(pt1[0]*1280)+1280,int(pt1[1]*720)),5,(0,0,255),-1)
-        #     cv2.line(img_pair,(int(pt0[0]*1280),int(pt0[1]*720)),(int(pt1[0]*1280)+1280,int(pt1[1]*720)),(0,0,255),2)
-        # cv2.imwrite(f"outputs/vision/{video_name}_{img_name1}_{img_name2}.jpg",img_pair)
 
         ref_pts = torch.stack([fused_pts0, fused_pts1], dim=0)
         labels = {

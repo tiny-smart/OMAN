@@ -16,7 +16,6 @@ from matplotlib import pyplot as plt
 import util.misc as utils
 from models.tri_sim_ot_b import similarity_cost
 from models.vic import compute_relative_position
-from my_plot import draw_pair
 from util.misc import NestedTensor
 
 from util.misc import MetricLogger

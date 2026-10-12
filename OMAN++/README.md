@@ -28,10 +28,10 @@ These designs jointly form **OMAN++**, a simple but strong VIC baseline. To fill
 
 ### What's New Compared with OMAN (ICIP 2025)
 
-- A novel crowded VIC benchmark, **WuhanMetroCrowd**, featuring long sequences, large density/flow variations, and severe occlusions;
-- The **spatial-temporal displacement prior** with three synergistic modules: DASA, the displacement-modulated matcher, and the D-OT loss;
+- A novel crowded VIC benchmark, WuhanMetroCrowd, featuring long sequences, large density/flow variations, and severe occlusions;
+- The spatial-temporal displacement prior with three synergistic modules: DASA, the displacement-modulated matcher, and the D-OT loss;
 - Cross-frame displacement-aware self-attention and a displacement-modulated O2M matcher;
-- Comprehensive experiments on **four** benchmarks (SenseCrowd, CroHD, MovingDroneCrowd, WuhanMetroCrowd) with consistent improvements over the state of the art.
+- Comprehensive experiments on four benchmarks (SenseCrowd, CroHD, MovingDroneCrowd, WuhanMetroCrowd) with consistent improvements over the state of the art.
 
 ## Repository Structure
 
@@ -79,8 +79,7 @@ pip install -r requirements.txt
 | UAVVIC | Drone | 1 (3s) | In/Out |
 | **WuhanMetroCrowd (Ours)** | Surveillance | 1 (2s) | In/Out |
 
-- SenseCrowd: download from [Baidu disk](https://pan.baidu.com/s/1OYBSPxgwvRMrr6UTStq7ZQ?pwd=64xm#list/path=%2F) or the [original dataset link](https://github.com/HopLee6/VSCrowd-Dataset).
-- CroHD / MovingDroneCrowd / UAVVIC: please prepare the datasets following their official instructions.
+- SenseCrowd / CroHD / MovingDroneCrowd / UAVVIC: please prepare the datasets following their official instructions.
 - **WuhanMetroCrowd [Final Version]**: [Baidu disk](https://pan.baidu.com/s/108pYcxp1JkNaV27K1O6Ivg?pwd=jt3h) or [Google disk](https://drive.google.com/file/d/1qin0o5TGU0QrFR0AA3weFYY62rWDgyTh/view?usp=share_link). Based on the preview version reported in the paper, we have thoroughly re-inspected the dataset, rectified annotation errors, and extend the dataset. We will report OMAN++'s result on final version in this repo.
 
 
