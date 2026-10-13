@@ -80,7 +80,7 @@ pip install -r requirements.txt
 | **WuhanMetroCrowd (Ours)** | Surveillance | 1 (2s) | In/Out |
 
 - SenseCrowd / CroHD / MovingDroneCrowd / UAVVIC: please prepare the datasets following their official instructions.
-- **WuhanMetroCrowd [Final Version]**: [[Baidu disk]](https://pan.baidu.com/s/108pYcxp1JkNaV27K1O6Ivg?pwd=jt3h) or [[Google disk]](https://drive.google.com/file/d/1qin0o5TGU0QrFR0AA3weFYY62rWDgyTh/view?usp=share_link). Based on the preview version reported in the paper, we have thoroughly re-inspected the dataset, rectified annotation errors, and extend the dataset. We will report OMAN++'s result on final version in this repo.
+- **WuhanMetroCrowd [Final Version]**: [[Baidu disk]](https://pan.baidu.com/s/108pYcxp1JkNaV27K1O6Ivg?pwd=jt3h) or [[Google disk]](https://drive.google.com/file/d/1qin0o5TGU0QrFR0AA3weFYY62rWDgyTh/view?usp=share_link). Based on the preview version reported in the paper, we have thoroughly re-inspected the dataset and rectified annotation errors. We will report OMAN++'s result on final version in this repo.
 
 
 ## Inference
@@ -114,7 +114,7 @@ Results on WuhanMetroCrowd:
 | Dataset | Clips | Frames | Annotations | MAE | MSE | WRAE |
 | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
 | WuhanMetroCrowd-Preview (paper) | 80 | 11,925 | 223,662 | 87.1 | 160.2 | 19.8 |
-| WuhanMetroCrowd-Final (repo) | 99 | 14,486 | 245,085 | - | - | - |
+| WuhanMetroCrowd-Final (repo) | 80 | - | - | - | - | - |
 
 ## Citation
 
