@@ -83,21 +83,6 @@ pip install -r requirements.txt
 - **WuhanMetroCrowd [Final Version]**: [[Baidu disk]](https://pan.baidu.com/s/108pYcxp1JkNaV27K1O6Ivg?pwd=jt3h) or [[Google disk]](https://drive.google.com/file/d/1qin0o5TGU0QrFR0AA3weFYY62rWDgyTh/view?usp=share_link). Based on the preview version reported in the paper, we have thoroughly re-inspected the dataset, rectified annotation errors, and extend the dataset. We will report OMAN++'s result on final version in this repo.
 
 
-
-## Training
-
-- Select the dataset by `--dataset_file` (`SENSE` / `HT21` / `Metro` / `UAVVIC` / `Drone`) and set the corresponding roots in `train.py`, then run
-
-```
-python train.py
-```
-
-or launch with multiple GPUs (see `train.sh`):
-
-```
-bash train.sh
-```
-
 ## Inference
 
 - To test OMAN++ on different datasets, run
