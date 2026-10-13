@@ -15,6 +15,25 @@ Hao Lu<sup>1</sup>, Xuhui Zhu<sup>1</sup>, Wenjing Zhang<sup>1</sup>, Yanan Li<s
 
 ![OMAN++](pics/Pipeline.png)
 
+## Highlights
+
+- **WuhanMetroCrowd dataset**: Our WuhanMetroCrowd dataset features crowded, dynamic pedestrian flows from 7 typical metro station scenes, with severe occlusions and large density variations. Each pedestrian is manually annotated as `pedestrian`, `inflow`, `outflow`, or `both`, and indiscernible regions are masked for fair evaluation.
+<p align="center">
+  <img src="pics/dataset_teaser.png" width="850">
+</p>
+
+- **Effective across all benchmarks**: OMAN++ outperforms all existing methods and achieves robust counting performance by leveraging the social grouping and spatial-temporal displacement priors, especially in crowded scenarios like WuhanMetroCrowd.
+<p align="center">
+  <img src="pics/qualitative_results.png" width="850">
+</p>
+
+<p align="center">
+  <img src="pics/qualitative_benchmarks.png" width="850">
+</p>
+
+
+
+
 ## Overview
 
 Video Individual Counting (VIC) aims to estimate foot traffic by counting unique pedestrians in a video, which is essentially a correspondence problem between frames. Existing VIC approaches mostly follow a one-to-one (O2O) matching strategy conditioned on appearance only, and therefore underperform in crowded scenes such as metro commuting.
@@ -110,11 +129,15 @@ python eval_metrics_Metro.py
 ```
 
 ## Results
-Results on WuhanMetroCrowd:
-| Dataset | Clips | Frames | Annotations | MAE | MSE | WRAE |
-| :--: | :--: | :--: | :--: | :--: | :--: | :--: |
-| WuhanMetroCrowd-Preview (paper) | 80 | 11,925 | 223,662 | 87.1 | 160.2 | 19.8 |
-| WuhanMetroCrowd-Final (repo) | 80 | - | - | - | - | - |
+
+Here are OMAN++'s Results on *WuhanMetroCrowd-Preview (80 clips, 11,925 frames, 223,662 annotations)* and *WuhanMetroCrowd-Final (80 clips, 11,925 frames, 207,545 annotations)*. Final version results will be updated soon.
+
+| Dataset | MAE ↓ | MSE ↓ | WRAE ↓ | Checkpoint |
+| :--: | :--: | :--: | :--: | :-- |
+| **WuhanMetroCrowd-Preview** | **87.1** | **160.2** | **19.8%** | [[Baidu]](https://pan.baidu.com/s/1Cfyq3mV-CleJwDlvXlww5A?pwd=g9j2) [[Google]](https://drive.google.com/drive/folders/1lvLWBbbTAPY9jOxBj9MMkYXXLQ7CYuQN?usp=share_link) |
+| **WuhanMetroCrowd-Final** | **-** | **-** | **-** | [[Baidu]]() [[Google]]() |
+
+
 
 ## Citation
 
