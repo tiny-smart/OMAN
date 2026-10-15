@@ -1,28 +1,24 @@
-# Video Individual Counting With Implicit One-to-many Matching (ICIP 2025)
+# Video Individual Counting With Implicit One-to-many Matching (ICIP 2025 / TIP 2026)
 
-This repository includes the official implementation of the paper:
+## Updates
 
-[**Video Individual Counting With Implicit One-to-many Matching**](https://arxiv.org/abs/2506.13067)
+- **13 Oct 2026**: The journal version of this work has been accepted! We further propose a large-scale VIC dataset and extend our insights. Code and WuhanMetroCrowd reported in the [paper](https://github.com/tiny-smart/OMAN) can be accessed in this [repo](https://github.com/tiny-smart/OMAN/tree/main/OMAN%2B%2B).
+- **9 Dec 2025**: The paper is finalized and released!
+- **23 May 2025**: Inference code and pretrained models are released!
 
+
+This repository includes the official implementation of the paper: 
+[**Video Individual Counting With Implicit One-to-many Matching**](https://arxiv.org/abs/2506.13067), 
 International Conference on Image Processing (ICIP), 2025
 
-Xuhui Zhu<sup>1</sup>, Jing Xu<sup>2</sup>,Bingjie Wang<sup>3</sup>,Huikang Dai<sup>2</sup>,[Hao Lu](https://sites.google.com/site/poppinace/)<sup>1</sup>
-
+Xuhui Zhu<sup>1</sup>, Jing Xu<sup>2</sup>, Bingjie Wang<sup>3</sup>, Huikang Dai<sup>2</sup>, [Hao Lu](https://sites.google.com/site/poppinace/)<sup>1</sup>
 <sup>1</sup>Huazhong University of Science and Technology, China
-
 <sup>2</sup>FiberHome Telecommunication Technologies Co., Ltd., China
-
 <sup>3</sup>University of Rochester, Rochester, USA
 
 [[Paper]](https://arxiv.org/abs/2506.13067) | [[Code]](https://github.com/tiny-smart/OMAN)
 
 ![OMAN](pics/Pipeline.png)
-
-## Updates
-
-- **13 Oct 2026**: The [journal version](https://github.com/tiny-smart/OMAN) of this work has been accepted! We further propose a large-scale VIC dataset and extend our insights on VIC. Inference code and WuhanMetroCrowd dataset can be accessed in this [repo](https://github.com/tiny-smart/OMAN/tree/main/OMAN%2B%2B).
-- **9 Dec 2025**: The paper is finalized and released!
-- **23 May 2025**: Inference code and pretrained models are released!
 
 ## Overview
 
