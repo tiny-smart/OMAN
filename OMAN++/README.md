@@ -28,8 +28,6 @@ Hao Lu<sup>1</sup>, Xuhui Zhu<sup>1</sup>, Wenjing Zhang<sup>1</sup>, Yanan Li<s
 </p>
 
 
-
-
 ## Overview
 
 Video Individual Counting (VIC) estimates foot traffic by counting unique pedestrians in a video. Existing methods primarily rely on appearance-based O2O matching, limiting performance in crowded scenes.
@@ -92,6 +90,11 @@ pip install -r requirements.txt
 - SenseCrowd / CroHD / MovingDroneCrowd / UAVVIC: please prepare the datasets following their official instructions.
 - **WuhanMetroCrowd [Final Version]**: [[Baidu disk]](https://pan.baidu.com/s/108pYcxp1JkNaV27K1O6Ivg?pwd=jt3h) or [[Google disk]](https://drive.google.com/file/d/1qin0o5TGU0QrFR0AA3weFYY62rWDgyTh/view?usp=share_link). Based on the preview version reported in the paper, we have thoroughly re-inspected the dataset and rectified annotation errors. We will report OMAN++'s result on final version in this repo.
 
+## A Quick Demo
+```
+todo
+```
+
 
 ## Inference
 
@@ -137,17 +140,25 @@ Results on *WuhanMetroCrowd-Final* (80 clips, 11,925 frames, 207,545 annotations
 | Dataset | MAE ↓ | MSE ↓ | WRAE ↓ | Checkpoint |
 | :--: | :--: | :--: | :--: | :--: |
 | CGNet | 99.1 | 142.6 | 38.9% | [[Baidu]]() [[Google]]() |
-| SDNet | - | - | - | [[Baidu]]() [[Google]]() |
+| SDNet | 151.8 | 415.4 | 31.1% | [[Baidu]]() [[Google]]() |
 | OMAN | - | - | - | [[Baidu]]() [[Google]]() |
 | **OMAN++** | **-** | **-** | **-** | [[Baidu]]() [[Google]]() |
-
 
 ## Citation
 
 If you find this work helpful for your research, please consider citing:
 
 ```
-todo
+@article{OMAN++,
+  author={Hao Lu, Xuhui Zhu, Wenjing Zhang, Yanan Li, Xiang Bai},
+  booktitle={IEEE Transaction on Image Processing}, 
+  title={Crowded Video Individual Counting Informed by Social Grouping and Spatial-Temporal Displacement Priors}, 
+  year={2026},
+  volume={},
+  number={},
+  pages={},
+  keywords={Video individual counting, foot traffic, one-to-many matching, displacement priors},
+  doi={}}
 ```
 
 ## Permission
