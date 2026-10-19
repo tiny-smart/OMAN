@@ -23,7 +23,7 @@ from datasets.Locator_dataset import trans_dataset
 
 from util.misc import nested_tensor_from_tensor_list
 from scipy.optimize import linear_sum_assignment
-from test import read_pts, point_nms
+from test import read_pts
 
 class DeNormalize(object):
     def __init__(self, mean, std):
@@ -66,19 +66,6 @@ def visualization(samples, targets, labels, pred, queries, vis_dir, split_map=No
             sample_vis = cv2.circle(sample_vis, (int(p[1]), int(p[0])), size, (0, 255, 0), -1)
             points_list.append((int(p[1]), int(p[0])))
 
-        # # draw query (blue)
-        # for i, q in enumerate(queries[idx]):
-        #     sample_vis = cv2.circle(sample_vis, (int(q[1]), int(q[0])), size, (255, 0, 0), -1)
-        # cv2.putText(sample_vis, str(i+1), (50,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-
-        # draw split map
-        # if split_map is not None:
-        #     imgH, imgW = sample_vis.shape[:2]
-        #     split_map = (split_map * 255).astype(np.uint8)
-        #     split_map = cv2.applyColorMap(split_map, cv2.COLORMAP_JET)
-        #     split_map = cv2.resize(split_map, (imgW, imgH), interpolation=cv2.INTER_NEAREST)
-        #     sample_vis = split_map * 0.9 + sample_vis
-
         # save image
         if vis_dir is not None:
             # eliminate invalid area
@@ -101,14 +88,6 @@ def visualization(samples, targets, labels, pred, queries, vis_dir, split_map=No
 
         save_path = root_path + '/' + img_name
         cv2.imwrite(save_path, sample_vis)
-
-        # txt_path = './locator/'+video_name
-        # if not os.path.exists(txt_path):
-        #     os.mkdir(txt_path)
-        # f = open(txt_path +'/'+img_name+'.txt', "w")
-        # for pts in points_list:
-        #     f.write(str(pts[0]) + ' ' + str(pts[1]) + '\n')
-        # f.close()
 
 
 # training
@@ -169,24 +148,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         metric_logger.update(loss=loss_value, **loss_dict_reduced_scaled, **loss_dict_reduced_unscaled)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
-        # """ visualization """
-        # if iteration % 25 == 0:
-        #     for k, v in loss_dict.items():
-        #         if k not in loss_list.keys():
-        #             loss_list[k] = [v.cpu().detach()]
-        #         else:
-        #             loss_list[k].append(v.cpu().detach())
-
-    # 绘制损失曲线
-    # for k in loss_list.keys():
-    #     plt.plot(loss_list[k])
-    #     plt.xlabel("iteration")
-    #     plt.ylabel("loss:" + k)
-    #     plt.savefig('/home/bjwang/TOPO-PET-Trans/outputs/SENSE/vision/'+k+'_epoch_'+str(epoch)+'.jpg')
-    #     plt.clf()  # 清图。
-    #     plt.cla()  # 清坐标轴。
-    #     plt.close()  # 关窗口
-
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
@@ -235,9 +196,6 @@ def evaluate(args, model, data_loader, device, epoch=0, vis_dir=None):
 
         img_name0 = img_names[0][0]
         pos0, feature0 = read_pts(model, imgs[0, 0])
-        # pos0 = point_nms(pos0, imgs[0, 0])
-        # pos0 = np.multiply(labels["pts"][0][0].numpy(),np.array([w, h])).astype(np.float32)   # GT
-        # save_pts(video_name, img_name0, pos0)
         if args.distributed:
             z0 = model.module.forward_single_image(
                 imgs[0, 0].cuda().unsqueeze(0), [pos0], feature0, True)
@@ -258,13 +216,10 @@ def evaluate(args, model, data_loader, device, epoch=0, vis_dir=None):
         outflow_lists = []
         pos_lists.append(pos0)
         inflow_lists.append([1 for _ in range(len(pos0))])
-        # if selected_idx[-1] != len(img_names)-1:
-        #     selected_idx.append(len(img_names)-1)
         for i in selected_idx:
             img_name = img_names[i][0]
 
             pos, feature1 = read_pts(model, imgs[0, i])
-            # pos = point_nms(pos, imgs[0, i])
 
             pre_pre_z = pre_z
             if args.distributed:
@@ -275,30 +230,15 @@ def evaluate(args, model, data_loader, device, epoch=0, vis_dir=None):
                     imgs[0, i].cuda().unsqueeze(0), [pos], feature1, True, pre_z)
             z1 = F.normalize(z1, dim=-1).transpose(0, 1)
             z2 = F.normalize(z2, dim=-1).transpose(0, 1)
-            # match_matrix = torch.bmm(z1, z2.transpose(1, 2))
-
-            # C = match_matrix.cpu().detach().numpy()[0]
-            # row_ind, col_ind = linear_sum_assignment(-C)
-
-            # sim_score = C[row_ind, col_ind]
-            # shared_mask = sim_score > threshold
-            # pre_pedestrian_list = row_ind[shared_mask]
-            # pedestrian_list = col_ind[shared_mask]
-            # inflow_idx_list = [i for i in range(len(pos)) if i not in col_ind[shared_mask]]
-            # outflow_idx_list = [i for i in range(len(pos)) if i not in row_ind[shared_mask]]
-
-            # sim_feat = z1[:, row_ind, :] * z2[:, col_ind, :]
+            
             sim_feat = torch.einsum('bnc,bmc->bnmc', z2, z1)  # [1, n, m, c]
             sim_feat = sim_feat.view(1, -1, z1.shape[-1])  # [1, n*m, c]
-            # dist, diff = compute_relative_position(torch.cat((pre_pos, pos), dim=0),torch.cat((pre_pos, pos), dim=0))
             if args.distributed:
                 pred_logits = model.module.vic.regression(sim_feat.squeeze(0))
             else:
                 pred_logits = model.vic.regression(sim_feat.squeeze(0))
             pred_prob = F.softmax(pred_logits, dim=1)
             pred_score, pred_class = pred_prob.max(dim=1)
-            # pedestrian_list = col_ind[(1 - pred_class).bool().cpu().numpy()]
-            # pre_pedestrian_list = row_ind[(1 - pred_class).bool().cpu().numpy()]
             pedestrian_idx = torch.nonzero(pred_class == 0).squeeze(1).cpu().numpy()
             pedestrian_list = pedestrian_idx // z1.shape[1]
             pre_pedestrian_list = pedestrian_idx % z1.shape[1]
@@ -419,14 +359,6 @@ def evaluate(args, model, data_loader, device, epoch=0, vis_dir=None):
 
         results_reduced = utils.reduce_dict(results)
         metric_logger.update(mae=results_reduced['mae'], mse=results_reduced['mse'], mae_vic=results_reduced['mae_vic'])
-
-        # visualize predictions
-        # if vis_dir:
-        #     points = [[point[0] * img_h, point[1] * img_w] for point in outputs_points]  # recover to actual points
-        #     queries = [[query[0] * img_h, query[1] * img_w] for query in outputs_queries]  # recover to actual queries
-        #     split_map = (outputs['split_map_raw'][0].detach().cpu().squeeze(0) > 0.5).float().numpy()
-        #     visualization(samples0, targets, labels, [points], [queries], vis_dir, split_map, name_cnt)
-        #     name_cnt += 1
 
     # gather the stats from all processes
     WRAE = np.sum(
