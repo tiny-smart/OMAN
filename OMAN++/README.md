@@ -88,7 +88,7 @@ pip install -r requirements.txt
 | **WuhanMetroCrowd (Ours)** | Surveillance | 1 (2s) | In/Out |
 
 - SenseCrowd / CroHD / MovingDroneCrowd / UAVVIC: please prepare the datasets following their official instructions.
-- **WuhanMetroCrowd [Final Version]**: [[Baidu disk]](https://pan.baidu.com/s/108pYcxp1JkNaV27K1O6Ivg?pwd=jt3h) or [[Google disk]](https://drive.google.com/file/d/1qin0o5TGU0QrFR0AA3weFYY62rWDgyTh/view?usp=share_link). Based on the preview version reported in the paper, we have thoroughly re-inspected the dataset and rectified annotation errors. We will report OMAN++'s result on final version in this repo.
+- **WuhanMetroCrowd**: [[Baidu disk]](https://pan.baidu.com/s/1e5f0AiE0sKn3-oCgf99jKQ?pwd=aiqj) or [[Google disk]](https://drive.google.com/file/d/1ORvmQWTRrVWCNWKDczAud7078kPtJkVE/view?usp=sharing). (80 clips, 11,925 frames, 207,545 annotations)
 
 ## A Quick Demo
 ```
@@ -123,26 +123,29 @@ python eval_metrics_Metro.py
 ```
 
 ## Results
-- WuhanMetroCrowd-Preview
-Results on *WuhanMetroCrowd-Preview* (80 clips, 11,925 frames, 223,662 annotations).
+- **WuhanMetroCrowd**
 
 | Dataset | MAE ↓ | MSE ↓ | WRAE ↓ | Checkpoint |
 | :--: | :--: | :--: | :--: | :--: |
-| CGNet | - | - | - | -|
-| SDNet | - | - | - | [[Baidu]]() [[Google]]() |
-| OMAN | - | - | - | [[Baidu]]() [[Google]]() |
-| **OMAN++** | **87.1** | **160.2** | **19.8%** | [[Baidu]](https://pan.baidu.com/s/1Cfyq3mV-CleJwDlvXlww5A?pwd=g9j2) [[Google]](https://drive.google.com/drive/folders/1lvLWBbbTAPY9jOxBj9MMkYXXLQ7CYuQN?usp=share_link) |
+| CGNet | 164.0 | 344.6| 35.0% | [[Baidu]](https://pan.baidu.com/s/1lwI3x74RLV4PVAy0JANDPA?pwd=wkxd) [[Google]](https://drive.google.com/file/d/19R-5bkEcQ3fayhF56kCvfvoxNCHS0q_f/view?usp=sharing) |
+| SDNet | 151.8 | 415.4 | 31.1% | [[Baidu]](https://pan.baidu.com/s/1X9vXIa2xn43DloIC_xQ5cQ?pwd=ta8s) [[Google]](https://drive.google.com/file/d/17d7ztkN_C_n1PQ-JiOqRo9xKg3Avuiuk/view?usp=sharing) |
+| OMAN (Ours) | 130.3 | 257.3 | 34.4% | [[Baidu]](https://pan.baidu.com/s/1b28hN-v7ZYM4e7ZQGL7Nwg?pwd=han1) [[Google]](https://drive.google.com/file/d/1UtjEay840eG_RkqncPXryX0VAK_IQ05H/view?usp=sharing) |
+| **OMAN++ (Ours)** | **45.4** | **62.3** | **18.1%** | [[Baidu]](https://pan.baidu.com/s/1FEYFcIgAWDGyOltktJn8mQ?pwd=5fjr) [[Google]](https://drive.google.com/file/d/1TxzG4PUvHTpkpCLLZpX5BwmueHOPGMqh/view?usp=sharing) |
 
 
-- WuhanMetroCrowd-Final
-Results on *WuhanMetroCrowd-Final* (80 clips, 11,925 frames, 207,545 annotations).
+- **SenseCrowd**
 
 | Dataset | MAE ↓ | MSE ↓ | WRAE ↓ | Checkpoint |
 | :--: | :--: | :--: | :--: | :--: |
-| CGNet | 99.1 | 142.6 | 38.9% | [[Baidu]]() [[Google]]() |
-| SDNet | 151.8 | 415.4 | 31.1% | [[Baidu]]() [[Google]]() |
-| OMAN | - | - | - | [[Baidu]]() [[Google]]() |
-| **OMAN++** | **-** | **-** | **-** | [[Baidu]]() [[Google]]() |
+| DRNet | 12.3 | 24.7 | 12.7 | - |
+| CGNet | 8.9 | 17.7 | 12.6 | - |
+| FMDC | 14.3 | 28.9 | 14.9 | - |
+| PDTR | 9.6 | 17.6 | 11.4 | - |
+| SDNet | 8.6 | 15.9 | 11.0 | - |
+| VIC-SSL | 7.6 | 12.6 | 10.4 | - |
+| OMAN (Ours) | 8.3 | 15.4 | 11.1 | - |
+| **OMAN++ (Ours)** | 7.7 | 14.6 | 10.4 | [[Baidu]](https://pan.baidu.com/s/1sgSFb3cT0LnElgjvoY1D7Q?pwd=9e6t) [[Google]](https://drive.google.com/file/d/1uMBPOSRsrmyAH9JiNQIXeCzz_7FY1cbD/view?usp=sharing) |
+
 
 ## Citation
 
@@ -163,7 +166,8 @@ If you find this work helpful for your research, please consider citing:
 
 ## Permission
 
-This code is for academic purposes only. Contact: Xuhui Zhu (XuhuiZhu@hust.edu.cn)
+The code and dataset are for academic purposes only. Contact: Xuhui Zhu (XuhuiZhu@hust.edu.cn);
+
 For commercial use, Contact: Hao Lu (hlu@hust.edu.cn)
 
 ## Acknowledgement
