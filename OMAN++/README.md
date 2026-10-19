@@ -91,14 +91,17 @@ pip install -r requirements.txt
 - **WuhanMetroCrowd**: [[Baidu disk]](https://pan.baidu.com/s/1e5f0AiE0sKn3-oCgf99jKQ?pwd=aiqj) or [[Google disk]](https://drive.google.com/file/d/1ORvmQWTRrVWCNWKDczAud7078kPtJkVE/view?usp=sharing). (80 clips, 11,925 frames, 207,545 annotations)
 
 ## A Quick Demo
+Place pretrained models in ./pretrained. Use our provided video clip or place your video clips in ./examples and run the following command for a quick demonstration of OMAN++. Results are saved in ./examples/results.
+
+```bash
+python demo.py --input ./examples/test.mp4 --interval 50
 ```
-todo
-```
+
 
 
 ## Inference
 
-- To test OMAN++ on different datasets, run
+To test OMAN++ on different datasets, run
 
 ```
 # SenseCrowd
@@ -112,7 +115,7 @@ Checkpoint paths can be changed via `--resume`. Results are saved to `outputs/js
 
 ## Evaluation
 
-- To evaluate the results after testing, run the corresponding evaluation script:
+To evaluate the results after testing, run the corresponding evaluation script:
 
 ```
 # MovingDroneCrowd
