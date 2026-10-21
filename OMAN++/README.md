@@ -8,7 +8,7 @@ Hao Lu<sup>1</sup>, Xuhui Zhu<sup>1</sup>, Wenjing Zhang<sup>1</sup>, Yanan Li<s
 <sup>1</sup>Huazhong University of Science and Technology, China
 <sup>2</sup>Wuhan Institute of Technology, China
 
-[[Manuscript]](doc/OMAN++.pdf) | [Transaction Version](https://ieeexplore.ieee.org/document/11739646) | [[Previous Conference Version (OMAN, ICIP 2025)]](https://arxiv.org/abs/2506.13067) | [[Code]](https://github.com/tiny-smart/OMAN)
+[[Manuscript]](doc/OMAN++.pdf) | [Transaction Version (OMAN++, TIP 2026)](https://ieeexplore.ieee.org/document/11739646) | [[Previous Conference Version (OMAN, ICIP 2025)]](https://arxiv.org/abs/2506.13067) | [[Code]](https://github.com/tiny-smart/OMAN)
 
 ![WuhanMetroCrowd](pics/WuhanMetroCrowd.png)
 
